@@ -21,7 +21,7 @@ load_dotenv(override=True)
 # Configuration
 DEFAULT_LLM_PROVIDER: Literal["openai", "google"] = os.getenv("DEFAULT_LLM_PROVIDER", "openai")  # type: ignore[attr-defined]
 DEFAULT_LLM_MODEL: str = os.getenv(
-    "DEFAULT_LLM_MODEL", "gpt-4o-mini" if DEFAULT_LLM_PROVIDER == "openai" else "gemini-2.0-flash"
+    "DEFAULT_LLM_MODEL", "gpt-4o-mini" if DEFAULT_LLM_PROVIDER == "openai" else "gemini-2.5-flash"
 )
 API_KEYS: dict[Literal["openai", "google"], str] = {
     "openai": os.getenv("OPENAI_API_KEY", ""),
