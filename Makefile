@@ -55,3 +55,9 @@ test:
 	@echo "🔍 Running tests..."
 	@pytest -v --tb=short --disable-warnings --maxfail=1 || { echo "❌ Tests failed."; exit 1; }
 	@echo "✅ All tests passed!"
+
+zip:
+	@echo "📦 Zipping the project..."
+# git archive -o archive.zip HEAD
+	@git archive --format=zip --output=project.zip HEAD || { echo "❌ Failed to create zip archive."; exit 1; }
+	@echo "✅ Project zipped successfully!"

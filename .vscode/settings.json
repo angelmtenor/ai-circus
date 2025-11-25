@@ -80,6 +80,7 @@
         "cuda",
         "CUDA",
         "dataclass",
+        "debconf",
         "debugpy",
         "deptry",
         "docstrings",
@@ -107,6 +108,7 @@
         "lesspipe",
         "libc",
         "linux",
+        "localtime",
         "loguru",
         "maxfail",
         "mccabe",
@@ -115,6 +117,7 @@
         "minversion",
         "mypy",
         "myst",
+        "NEEDRESTART",
         "noheader",
         "noqa",
         "numpy",
@@ -149,12 +152,14 @@
         "Tavily",
         "TAVILY",
         "testpaths",
+        "tzdata",
         "unicode",
         "uvicorn",
         "vectorstore",
         "vectorstores",
         "venv",
         "virtualenv",
-        "xclip"
+        "xclip",
+        "zoneinfo"
     ]
 }
