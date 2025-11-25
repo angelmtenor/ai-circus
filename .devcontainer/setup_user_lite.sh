@@ -1,6 +1,27 @@
 #!/bin/bash
+#
 # Minimal User Environment Setup (unguided)
-# Usage: source setup_user.sh
+#
+# Usage:
+#   source setup_user.sh
+#
+# Description:
+#   Configures a minimal personal development environment for a user on Ubuntu.
+#   The script is designed to be idempotent and safe to re-run.
+#
+# Main Features:
+#   • Ensures ~/.local/bin is in the PATH
+#   • Configures basic Git settings (default branch, username, email)
+#   • Sets a simple, colored bash prompt
+#   • Adds a convenient alias: `setup` → `source setup.sh`
+#   • Installs or updates NVM (Node Version Manager) and ensures Node.js 20
+#   • Installs/updates `uv` CLI tool
+#
+# Notes:
+#   - Must be sourced, not executed, to properly update the current shell environment.
+#   - Requires `curl` and `git` to be installed.
+#   - Adds blocks to ~/.bashrc only if missing (idempotent).
+#   - Logs actions with color-coded feedback.
 
 set -e
 

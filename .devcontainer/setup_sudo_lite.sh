@@ -1,6 +1,35 @@
 #!/bin/bash
-# Simple Ubuntu 24 Setup Script
-# Usage: chmod +x setup_sudo.sh && sudo ./setup_sudo.sh
+#
+# Ubuntu 24.04 Simple Setup Script
+#
+# Usage:
+#   chmod +x setup_sudo.sh
+#   sudo ./setup_sudo.sh [--gpu]
+#
+# Parameters:
+#   --gpu
+#       Optional. Installs NVIDIA GPU support by:
+#         • Adding the graphics-drivers PPA
+#         • Installing the latest NVIDIA driver
+#         • Installing CUDA toolkit and utilities (e.g., nvtop)
+#       A reboot is recommended when using this flag.
+#
+# Description:
+#   This script performs a streamlined, non-interactive initial setup for
+#   Ubuntu 24.04 systems. It:
+#     • Ensures execution as root
+#     • Sets system timezone to UTC (including tzdata preseeding)
+#     • Checks for internet connectivity
+#     • Updates and upgrades the system
+#     • Installs a curated set of development and utility packages
+#     • Optionally configures GPU driver and CUDA support
+#     • Performs basic post-installation verification
+#
+# Notes:
+#   - Must be run with sudo or as root.
+#   - Designed to be simple, readable, and easy to modify.
+#   - Safe to re-run; package installation is idempotent.
+
 
 set -e
 
