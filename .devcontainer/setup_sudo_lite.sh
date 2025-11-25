@@ -18,7 +18,7 @@
 #   This script performs a streamlined, non-interactive initial setup for
 #   Ubuntu 24.04 systems. It:
 #     • Ensures execution as root
-#     • Sets system timezone to UTC (including tzdata preseeding)
+#     • Sets system timezone to UTC
 #     • Checks for internet connectivity
 #     • Updates and upgrades the system
 #     • Installs a curated set of development and utility packages

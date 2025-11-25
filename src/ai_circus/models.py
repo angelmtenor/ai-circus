@@ -60,4 +60,3 @@ def get_embeddings(provider: Literal["openai", "google"] = DEFAULT_LLM_PROVIDER)
         return OpenAIEmbeddings(api_key=SecretStr(api_key), model="text-embedding-3-small")
     if provider == "google":
         return GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=SecretStr(api_key))
-    raise ValueError(f"Invalid model provider: {provider}")
