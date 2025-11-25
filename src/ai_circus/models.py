@@ -57,9 +57,7 @@ def get_embeddings(provider: Literal["openai", "google"] = DEFAULT_LLM_PROVIDER)
         raise ValueError(f"{provider.upper()}_API_KEY not set")
 
     if provider == "openai":
-        return OpenAIEmbeddings(api_key=SecretStr(api_key))
+        return OpenAIEmbeddings(api_key=SecretStr(api_key), model="text-embedding-3-small")
     if provider == "google":
-        return GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-exp-03-07", google_api_key=SecretStr(api_key)
-        )
+        return GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=SecretStr(api_key))
     raise ValueError(f"Invalid model provider: {provider}")
