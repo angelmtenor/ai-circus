@@ -1,119 +1,95 @@
 #!/bin/bash
+#
+# Ubuntu 24.04 Simple Setup Script
+#
+# Usage:
+#   chmod +x setup_sudo.sh
+#   sudo ./setup_sudo.sh [--gpu]
+#
+# Parameters:
+#   --gpu
+#       Optional. Installs NVIDIA GPU support by:
+#         • Adding the graphics-drivers PPA
+#         • Installing the latest NVIDIA driver
+#         • Installing CUDA toolkit and utilities (e.g., nvtop)
+#       A reboot is recommended when using this flag.
+#
+# Description:
+#   This script performs a streamlined, non-interactive initial setup for
+#   Ubuntu 24.04 systems. It:
+#     • Ensures execution as root
+#     • Sets system timezone to UTC
+#     • Checks for internet connectivity
+#     • Updates and upgrades the system
+#     • Installs a curated set of development and utility packages
+#     • Optionally configures GPU driver and CUDA support
+#     • Performs basic post-installation verification
+#
+# Notes:
+#   - Must be run with sudo or as root.
+#   - Designed to be simple, readable, and easy to modify.
+#   - Safe to re-run; package installation is idempotent.
 
-# Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
 
-# Updates Ubuntu system and installs essential project packages.
-# Optionally installs NVIDIA/CUDA GPU support.
-# Recommended: Ubuntu 24.04 LTS or later
-# Usage: chmod +x setup_sudo.sh && sudo ./setup_sudo.sh
-
-# Exit codes
-EXIT_SUCCESS=0
-EXIT_NOT_ROOT=1
-EXIT_ERROR=2
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-# Check root
-[[ $EUID -ne 0 ]] && { echo -e "${RED}❌ Failure: Run as root${NC}" >&2; exit $EXIT_NOT_ROOT; }
-
-# Error handling
 set -e
-trap 'echo -e "${RED}❌ Failure: Failed at line $LINENO${NC}" >&2; exit $EXIT_ERROR' ERR
 
-# Logging with standardized indicators
-log() {
-    case $1 in
-        INFO) echo -e "${GREEN}ℹ️ Info: $2${NC}" ;;
-        WARN) echo -e "${YELLOW}⚠️ Warning: $2${NC}" ;;
-        ERROR) echo -e "${RED}❌ Failure: $2${NC}" >&2 ;;
-        DEBUG) echo -e "🔍 Debug: $2" ;;
-        SUCCESS) echo -e "${GREEN}✅ Success: $2${NC}" ;;
-    esac
-}
+# --- Colors ---
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+log(){ echo -e "$2${1}${NC}"; }
 
-# Check internet connectivity
-check_connectivity() {
-    log INFO "Checking internet connectivity..."
-    if ! ping -c 1 -W 2 8.8.8.8 &> /dev/null; then
-        log ERROR "No internet connection detected."
-        exit $EXIT_ERROR
-    fi
-    log SUCCESS "Internet connection verified."
-}
+# --- Must run as root ---
+[[ $EUID -ne 0 ]] && { log "${RED}❌ Run as root"; exit 1; }
 
-# Add NVIDIA repository
-add_nvidia_repository() {
-    log INFO "Adding NVIDIA repository..."
-    if ! command -v add-apt-repository &> /dev/null; then
-        apt install -y software-properties-common
-    fi
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+
+# Force UTC timezone and pre-seed tzdata
+rm -f /etc/localtime /etc/timezone
+echo "Etc/UTC" > /etc/timezone
+ln -fs /usr/share/zoneinfo/UTC /etc/localtime
+debconf-set-selections <<EOF
+tzdata tzdata/Areas select Etc
+tzdata tzdata/Zones/Etc select UTC
+EOF
+
+# --- Check internet ---
+wget -q --spider http://google.com || { log "${RED}❌ No internet detected"; exit 2; }
+
+# --- Package list (easy to edit) ---
+PACKAGES=(
+  git git-flow make curl wget ca-certificates
+  nano htop gcc g++ clang linux-libc-dev pipx xclip
+  python3 python3-pip python3-venv
+)
+
+log "${GREEN}ℹ️ Updating system..."
+apt update -y && apt full-upgrade -y
+
+log "${GREEN}ℹ️ Installing base packages..."
+apt install -y --no-install-recommends "${PACKAGES[@]}"
+apt autoremove -y
+
+# --- Optional GPU setup ---
+if [[ $1 == "--gpu" ]]; then
+    log "${YELLOW}⚡ GPU flag detected: installing NVIDIA/CUDA..."
+
+    apt install -y software-properties-common
     add-apt-repository -y ppa:graphics-drivers/ppa
     apt update -y
-    log SUCCESS "NVIDIA repository added."
-}
 
-# Install base packages
-install_base_packages() {
-    log INFO "Installing base packages..."
-    apt update -y
-    apt full-upgrade -y
-    apt install -y --no-install-recommends \
-        git git-flow make curl wget ca-certificates \
-        nano htop gcc g++ clang linux-libc-dev pipx xclip \
-        python3 python3-pip python3-venv
-    apt autoremove -y
-    log SUCCESS "Base packages installed."
-}
+    apt install -y \
+        ubuntu-drivers-common nvidia-driver-latest \
+        nvidia-cuda-toolkit nvtop
 
-# Install GPU support
-install_gpu_support() {
-    log INFO "Installing NVIDIA/CUDA support..."
-    if ! command -v nvidia-smi &> /dev/null; then
-        log DEBUG "No NVIDIA GPU detected, attempting driver installation..."
-        add_nvidia_repository
-        apt install -y nvtop ubuntu-drivers-common nvidia-driver-latest nvidia-cuda-toolkit
-        ubuntu-drivers autoinstall
-    else
-        log INFO "NVIDIA GPU detected, installing CUDA toolkit..."
-        apt install -y nvtop nvidia-cuda-toolkit
-    fi
-    log SUCCESS "GPU support installed."
-    log WARN "System will reboot in 5 seconds (press Ctrl+C to cancel)..."
-    sleep 5
-    reboot
-}
+    ubuntu-drivers autoinstall || true
 
-# Verify installations
-verify_installations() {
-    log INFO "Verifying installations..."
-    for cmd in git curl wget nano htop gcc g++ clang pipx xclip python3; do
-        if command -v "$cmd" &> /dev/null; then
-            log SUCCESS "$cmd is installed."
-        else
-            log ERROR "$cmd installation failed."
-            exit $EXIT_ERROR
-        fi
-    done
-    log SUCCESS "All base packages verified."
-}
+    log "${GREEN}✅ NVIDIA/CUDA installed. Reboot recommended."
+fi
 
-# Main
-main() {
-    log INFO "Starting setup..."
-    check_connectivity
-    install_base_packages
-    verify_installations
-    echo -e "${YELLOW}[INPUT REQUIRED] Install NVIDIA/CUDA support? [y/N]: ${NC}"
-    read -r -n 1 reply
-    echo
-    [[ $reply =~ ^[Yy]$ ]] && install_gpu_support || log INFO "Skipping GPU support."
-    log SUCCESS "Setup completed."
-}
+# --- Verification (minimal) ---
+for cmd in git curl gcc python3; do
+    command -v "$cmd" &>/dev/null || { log "${RED}❌ $cmd missing."; exit 3; }
+done
 
-main
-exit $EXIT_SUCCESS
+log "${GREEN}✅ Setup complete!"
+[[ $1 == "--gpu" ]] && log "${YELLOW}⚠️ Reboot required for GPU drivers."
