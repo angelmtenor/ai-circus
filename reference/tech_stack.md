@@ -45,6 +45,7 @@ This document outlines the core components and tools used in our Generative AI (
 
 * **MCP Definition:** https://modelcontextprotocol.com
 * **FastMCP 2.0:** https://github.com/jlowin/fastmcp
+* **LangChain MCP Integration:** https://docs.langchain.com/oss/python/langchain/mcp
 
 ### Agentic Connectivity
 
