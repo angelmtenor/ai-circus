@@ -25,7 +25,7 @@ logger = configure_logger(level="INFO")
 
 # # Configuration
 # DEFAULT_LLM_PROVIDER = os.getenv("DEFAULT_LLM_PROVIDER", "openai")
-# DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL", "gpt-4o-mini")
+# DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL", "gpt-4.1-mini")
 # BASE_BRANCH = os.getenv("BASE_BRANCH", "main")
 
 

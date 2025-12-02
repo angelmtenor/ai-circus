@@ -5,6 +5,15 @@ A Building Block for Generative AI Tools Applications with state-of-the-art perf
 ---
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
 
+
+## Work in Progress
+This project is currently under active development. Features and functionalities are subject to change as we continue to enhance and refine the package. Stay tuned for updates and improvements!
+
+* Add OpenSearch integration for vector storage.
+* Implement Agents Frameworks integration (LangChain, OpenAI SDK, etc.) and examples.
+* Implement MCP (Model Context Protocol) support and examples.
+* Implement Agentic & MCP Connectivity and examples.
+
 ## Package Information
 
 ![PyPI Package](https://img.shields.io/badge/Package%20Version-0.0.1-green?style=for-the-badge)

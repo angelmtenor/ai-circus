@@ -46,6 +46,7 @@ dependencies = [
     "langgraph>=0.4.3",
     "loguru>=0.7.3",
     "openai-agents>=0.3.3",
+    "opensearch-py>=3.1.0",
     "psutil>=7.0.0",
     "py-cpuinfo>=9.0.0",
     "pydantic>=2.11.4",
