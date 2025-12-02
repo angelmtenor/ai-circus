@@ -4,19 +4,37 @@ Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/
 
 from __future__ import annotations
 
-import os
 from collections.abc import Callable
 from dataclasses import dataclass
 
 import httpx
-from dotenv import load_dotenv
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings
 
 from ai_circus.core.info import info_system
 from ai_circus.core.logger import configure_logger
 
-# Initialize logger and load environment variables
+# Initialize logger
 logger = configure_logger(level="INFO")
-load_dotenv(override=True)
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
+
+    openai_api_key: SecretStr = SecretStr("")
+    google_api_key: SecretStr = SecretStr("")
+    tavily_api_key: SecretStr = SecretStr("")
+
+    class Config:
+        """Pydantic configuration for environment variable loading."""
+
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
+
+
+# Load settings
+settings = Settings()
 
 
 @dataclass
@@ -87,9 +105,9 @@ def main() -> None:
 
     # Retrieve API keys
     api_keys = {
-        "OpenAI": os.getenv("OPENAI_API_KEY", ""),
-        "Google": os.getenv("GOOGLE_API_KEY", ""),
-        "Tavily": os.getenv("TAVILY_API_KEY", ""),
+        "OpenAI": settings.openai_api_key.get_secret_value(),
+        "Google": settings.google_api_key.get_secret_value(),
+        "Tavily": settings.tavily_api_key.get_secret_value(),
     }
 
     # Initialize checklist to log the status of each API

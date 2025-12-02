@@ -28,8 +28,16 @@ ARG USER_GID=$USER_UID
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     DEBIAN_FRONTEND=noninteractive \
+    NEEDRESTART_MODE=a \
     SHELL=/bin/bash \
     PATH=/home/$USERNAME/.local/bin:$PATH
+
+# Set system timezone to UTC
+RUN rm -f /etc/localtime /etc/timezone && \
+    echo "Etc/UTC" > /etc/timezone && \
+    ln -fs /usr/share/zoneinfo/UTC /etc/localtime && \
+    echo "tzdata tzdata/Areas select Etc" | debconf-set-selections && \
+    echo "tzdata tzdata/Zones/Etc select UTC" | debconf-set-selections
 
 # Install tini as init system for better signal handling
 RUN apt-get update -y && \
@@ -40,7 +48,7 @@ RUN apt-get update -y && \
 # Remove default ubuntu user and install system packages
 RUN userdel -r ubuntu 2>/dev/null || true && \
     apt-get update -y && \
-    apt-get upgrade -y && \
+    apt-get full-upgrade -y && \
     apt-get install -y --no-install-recommends \
     git \
     git-flow \
@@ -54,9 +62,13 @@ RUN userdel -r ubuntu 2>/dev/null || true && \
     g++ \
     clang \
     linux-libc-dev \
+    pipx \
+    xclip \
+    python3 \
+    python3-pip \
+    python3-venv \
     unzip \
     zip \
-    xclip \
     ffmpeg \
     libsm6 \
     libxext6 \
@@ -67,11 +79,15 @@ RUN userdel -r ubuntu 2>/dev/null || true && \
 # Optional GPU support (NVIDIA/CUDA)
 RUN if [ "$ENABLE_GPU" = "true" ]; then \
     apt-get update -y && \
+    apt-get install -y --no-install-recommends software-properties-common && \
+    add-apt-repository -y ppa:graphics-drivers/ppa && \
+    apt-get update -y && \
     apt-get install -y --no-install-recommends \
-    nvtop \
     ubuntu-drivers-common \
-    nvidia-cuda-toolkit && \
-    ubuntu-drivers autoinstall && \
+    nvidia-driver-latest \
+    nvidia-cuda-toolkit \
+    nvtop && \
+    ubuntu-drivers autoinstall || true && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*; \
     fi
@@ -91,20 +107,35 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     /home/$USERNAME/.local/bin/uv tool install cookiecutter && \
     /home/$USERNAME/.local/bin/uv tool ensurepath
 
+# Install/update NVM and Node.js 20
+ENV NVM_DIR=/home/$USERNAME/.nvm
+RUN curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash \
+    && . "$NVM_DIR/nvm.sh" \
+    && nvm install 20 \
+    && nvm alias default 20 \
+    && nvm cache clear
+
+# Make Node available in PATH for subsequent Dockerfile commands
+ENV PATH=$NVM_DIR/versions/node/v20.*/bin:$PATH
+
 # Configure Git
 RUN git config --global init.defaultBranch main && \
-    git config --global core.editor nano
+    git config --global core.editor nano && \
+    git config --global user.name "user" && \
+    git config --global user.email "user@example.com"
 
-# Create setup script for user – use relative path for alias
-RUN echo "source ~/.bashrc" >> /home/$USERNAME/.bash_profile && \
-    echo "alias setup='source ./setup.sh'" >> /home/$USERNAME/.bashrc
+# Configure shell (prompt, alias, PATH)
+RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> .bashrc && \
+    echo 'export PS1="\[\e[32m\]\u@\h \[\e[34m\]\w\[\e[0m\]\$ "' >> .bashrc && \
+    echo 'alias setup="source setup_user.sh"' >> .bashrc && \
+    echo "source ~/.bashrc" >> .bash_profile
 
 # Set entrypoint to use tini
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/bin/bash"]
 
 # Suggest using the setup script with relative path
-RUN echo "To set up your development environment, run the following command from your home directory:" && \
-    echo "  source ./setup_user.sh" && \
+RUN echo "To set up or re-run your development environment, run the following command from your workspace directory:" && \
+    echo "  source setup_user.sh" && \
     echo "You can also use the alias 'setup' (ensure you're in the correct directory)." && \
     echo "For more information, check the README.md file in the repository."

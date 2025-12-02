@@ -1,15 +1,18 @@
 {
   "name": "Custom Ubuntu 24 GPU",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "context": "."
   },
   "runArgs": [
     "--hostname",
     "dev-container-template",
+    "--init",
     "--gpus",
     "all"
   ],
   "remoteUser": "user",
+  "postCreateCommand": "echo 'GPU development container ready!'",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -35,7 +38,7 @@
         "editor.defaultFormatter": "ms-python.black-formatter",
         "[python]": {
           "editor.codeActionsOnSave": {
-            "source.organizeImports": true
+            "source.organizeImports": "always"
           }
         },
         "jupyter.alwaysTrustNotebooks": true

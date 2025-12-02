@@ -203,7 +203,7 @@ def execute_commands(script_path: Path) -> None:
         if choice == "yes":
             try:
                 # Apply a git reset before any git add commands
-                subprocess.run(["git", "reset"], check=True)  # noqa: S603, S607
+                subprocess.run(["git", "reset"], check=True)  # noqa: S607
                 logger.info("git reset executed successfully")
                 subprocess.run(["/bin/bash", str(script_path)], check=True)  # noqa: S603
                 logger.info("Commands executed successfully")

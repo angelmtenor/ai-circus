@@ -4,14 +4,34 @@ Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/
 
 from __future__ import annotations
 
-from dotenv import load_dotenv
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings
 
 from ai_circus.core.info import info_system
 from ai_circus.core.logger import configure_logger
 
-# Initialize logger and load environment variables
-logger = configure_logger(level="INFO")
-load_dotenv()
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
+
+    log_level: str = "INFO"
+    app_name: str = "AI Circus"
+    openai_api_key: SecretStr = SecretStr("")
+    google_api_key: SecretStr = SecretStr("")
+
+    class Config:
+        """Pydantic configuration for environment variable loading."""
+
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
+
+
+# Load settings
+settings = Settings()
+
+# Initialize logger
+logger = configure_logger(level=settings.log_level)
 
 
 class SimpleClass:
@@ -30,7 +50,7 @@ def main() -> None:
     """Main function to demonstrate the functionality of the module."""
     info_system()
 
-    simple = SimpleClass("AI Circus")
+    simple = SimpleClass(settings.app_name)
     simple.greet()
 
 

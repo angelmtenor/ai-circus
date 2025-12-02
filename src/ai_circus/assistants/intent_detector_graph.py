@@ -228,7 +228,7 @@ def retriever_node(state: GraphState, retriever: Retriever) -> GraphState:
     if state.intent_output.get("intent") == "retrieve":
         try:
             reformulated_question = state.intent_output.get("reformulated_question", "")
-            docs = retriever.get_relevant_documents(reformulated_question)
+            docs = retriever._get_relevant_documents(reformulated_question)  # pyright: ignore[reportAttributeAccessIssue]
             state.retrieved_documents = [doc.page_content for doc in docs]
             logger.debug(f"Retrieved {len(docs)} documents for query: {reformulated_question}")
         except Exception as e:
@@ -285,7 +285,7 @@ def build_graph(retriever: Retriever) -> CompiledStateGraph:
     """
     workflow = StateGraph(GraphState)
     workflow.add_node("intent_detector", intent_detector_node)
-    workflow.add_node("retriever", lambda state: retriever_node(state, retriever))
+    workflow.add_node("retriever", lambda state: retriever_node(state, retriever))  # pyright: ignore[reportArgumentType]
     workflow.add_node("post_retriever", post_retriever_response_node)
     workflow.add_node("non_retriever", non_retriever_response_node)
     workflow.set_entry_point("intent_detector")
