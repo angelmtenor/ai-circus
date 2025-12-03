@@ -1,8 +1,10 @@
-# Tech Stack
+# Tech Stack – Lessons from Experience
 
-This document outlines the core components and tools used in our Generative AI (GenAI) stack.
+This file outlines the main components, tools, and frameworks of our software and GenAI stack. Complementary details and supporting content are provided in separate files within the same folder.
 
 ---
+
+
 
 ## Python Environment / Tools
 
