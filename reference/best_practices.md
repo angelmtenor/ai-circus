@@ -34,3 +34,6 @@ Adhering to these principles leads to:
 Neglecting these principles can quickly turn small projects into unmanageable messes. Time saved by “quick fixes” is often lost many times over in future debugging and rewrites.
 
 Write code as if you’ll be the next person maintaining it—months later, under pressure. These principles are your shortcut to a smoother, less painful future.
+
+## Further Reading
+- **Design Patterns in Python:** https://refactoring.guru/design-patterns/python

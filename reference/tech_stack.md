@@ -36,6 +36,10 @@ This document outlines the core components and tools used in our Generative AI (
 
 ## Generative AI (GenAI)
 
+### Newsletters & Leaderboards
+- **The Batch (DeepLearning.AI):** https://www.deeplearning.ai/the-batch/
+- **Model Leaderboard:** https://artificialanalysis.ai/leaderboards/models
+
 ### Agents Frameworks
 
 * **OpenAI SDK:** https://github.com/openai/openai-agents-python
@@ -51,6 +55,17 @@ This document outlines the core components and tools used in our Generative AI (
 
 * **Agentgateway:** https://github.com/agentgateway/agentgateway
 
+### Evaluation & Testing
+
+* **Opik:** https://github.com/comet-ml/opik
+* **Giskard:** https://github.com/Giskard-AI/giskard-oss
+
+### Real-time Voice Communication
+* **Pipecat:** https://github.com/pipecat-ai/pipecat
+
+---
+
+
 ## Cloud
 
 ### AWS AgentCore
@@ -58,3 +73,67 @@ This document outlines the core components and tools used in our Generative AI (
 * **Runtime:** https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agents-tools-runtime.html
 * **Workshop:** https://catalog.workshops.aws/agentcore-deep-dive/en-US
 * **Repo:** https://github.com/awslabs/amazon-bedrock-agentcore-samples
+
+### Cloud & DevOps Extras
+
+* **LocalStack:** https://github.com/localstack/localstack
+* **Coder:** https://github.com/coder/coder
+
+### API / Testing Tools
+- Swagger Editor → https://editor.swagger.io/
+- Postman → https://www.postman.com/
+- JWT.io → https://jwt.io
+- Lens (K8s) → https://lenshq.io/
+
+---
+
+
+## Additional GenAI / LLM Tools
+
+### Local / Open-Source LLM Tools
+
+- **Ollama:** https://ollama.com/
+- **Open WebUI:** https://github.com/open-webui/open-webui
+- **Chainlit:** https://github.com/Chainlit/chainlit
+- **OpenRouter:** https://openrouter.ai/
+- **Perplexity:** https://www.perplexity.ai/
+
+### Vector Stores / Embedding Databases
+
+- **OpenSearch:** https://opensearch.org/
+- **Milvus, Qdrant, Faiss, Pinecone, Weaviate**
+
+---
+
+## Python Data Science Libraries
+
+### Core Libraries
+
+| Category                  | Libraries                                                                                 |
+|----------------------------|------------------------------------------------------------------------------------------|
+| **Deep Learning (DL)**     | PyTorch, Keras                                                                          |
+| **Machine Learning (ML)**  | scikit-learn, shap, shapiq                                                              |
+| **Natural Language Processing (NLP)** | nltk, gensim, gluonnlp                                                      |
+| **Data Handling & Manipulation** | pandas, numpy, collections, re (regex), datetime, pickle, networkx               |
+| **Visualization & Plotting** | seaborn, matplotlib, pandas plot, plotly, missingno                                     |
+| **Web & APIs**             | beautifulsoup4                                                                          |
+| **Generic Utilities**      | random, time, os, pathlib, warnings                                                    |
+| **Scaling / Parallelism**  | dask, swifter
+| **Cryptography / Security** | cryptography
+
+### Additional Useful Libraries
+- **MLflow:** ML lifecycle platform
+- **Optuna:** Hyperparameter optimization
+- **Talos / Hyperas:** Hyperparameter scanning for Keras
+- **kerasplotlib / livelossplot:** Training visualization
+- **autokeras:** Automated ML → http://autokeras.com/
+- **missingno:** Visualize missing data
+- **fancyimpute:** Advanced imputation
+- **chardet:** Detect text encoding
+- **fuzzywuzzy:** String similarity
+- **ludwig:** Declarative deep learning
+- **Finetune:** Scikit-learn style finetuning for NLP
+
+
+
+
