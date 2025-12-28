@@ -1,5 +1,11 @@
-"""Tool to generate commit messages for staged, unstaged, and untracked files in a Git repository.
-Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
+"""
+generate_commit_messages.py
+--------------------------
+
+Tool to generate conventional commit messages for uncommitted changes in a Git repository
+using an LLM. Analyzes all changes together for intelligent grouping into logical commits.
+
+Author: Angel Martinez-Tenor, 2025.
 """
 
 from __future__ import annotations
@@ -7,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -14,235 +21,248 @@ from typing import Any
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-# Configure logging
 from ai_circus.core.logger import configure_logger
 from ai_circus.models import get_llm
 
-EXCLUDED_PATTERNS = [r"\.ipynb$", r"\.lock$"]
+EXCLUDED_PATTERNS = [r"\.ipynb$", r"\.lock$", r"\.json$", r"\.log$", r"^temp_output/"]
 
 logger = configure_logger(level="INFO")
-# Load environment variables
-
-# # Configuration
-# DEFAULT_LLM_PROVIDER = os.getenv("DEFAULT_LLM_PROVIDER", "openai")
-# DEFAULT_LLM_MODEL = os.getenv("DEFAULT_LLM_MODEL", "gpt-4.1-mini")
-# BASE_BRANCH = os.getenv("BASE_BRANCH", "main")
-
-
-# async def get_llm() -> Any:
-#     """Initialize and return the selected LLM."""
-#     api_key = os.getenv("OPENAI_API_KEY")
-#     if not api_key:
-#         raise ValueError("OPENAI_API_KEY not set")
-#     return ChatOpenAI(model=DEFAULT_LLM_MODEL, api_key=SecretStr(api_key))
 
 
 def read_styleguide() -> str:
-    """Read the styleguide.md file or return a default style guide."""
+    """Read styleguide.md or return default Conventional Commits guide."""
     styleguide_path = Path("styleguide.md")
-    default_styleguide = (
-        "Use clear, concise commit messages. Start with a verb, describe the change, and keep it under 72 characters."
+    default = (
+        "Follow Conventional Commits specification[](https://www.conventionalcommits.org).\n"
+        "Use types: feat, fix, docs, style, refactor, test, perf, build, ci, chore.\n"
+        "Format: <type>[optional scope]: <description>\n"
+        "Use imperative present tense. Description <= 72 characters.\n"
+        "Optional body for detailed explanation.\n"
+        "Group related changes into cohesive commits."
     )
-    return styleguide_path.read_text() if styleguide_path.exists() else default_styleguide
+    return styleguide_path.read_text(encoding="utf-8") if styleguide_path.exists() else default
 
 
 def run_git_command(command: list[str]) -> str:
-    """Run a Git command and return its output."""
+    """Run a Git command safely using a trusted allow-list and return stdout."""
+    # Allow specific git commands used in this tool (including per-file diffs with -- file)
+    allowed_bases = {
+        ("git", "diff", "--cached", "--name-status"),
+        ("git", "diff", "--name-status"),
+        ("git", "ls-files", "--others", "--exclude-standard"),
+        ("git", "diff", "--cached"),
+        ("git", "diff"),
+    }
+
+    # Extract base command ignoring file paths after --
+    if "--" in command:
+        base_idx = command.index("--")
+        base_cmd = tuple(command[:base_idx])
+    else:
+        base_cmd = tuple(command)
+
+    if base_cmd not in allowed_bases:
+        logger.error(f"Disallowed git command attempted: {' '.join(command)}")
+        return ""
+
     try:
-        result = subprocess.run(command, capture_output=True, text=True, check=True)  # noqa: S603
+        result = subprocess.run(  # noqa: S603  # Command is allow-listed
+            command,
+            capture_output=True,
+            text=True,
+            check=True,
+            cwd=Path.cwd(),
+        )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        logger.error(f"Git command failed: {e}")
+        logger.error(f"Git command failed: {' '.join(command)} | {e.stderr.strip()}")
         return ""
 
 
 def get_changed_files() -> list[dict[str, str]]:
-    """Retrieve uncommitted changes (staged, unstaged, and untracked files)."""
-    changes = []
+    """Collect staged, unstaged, and untracked changes with truncated diffs."""
+    changes: list[dict[str, str]] = []
 
     # Staged changes
-    staged_files = run_git_command(["git", "diff", "--cached", "--name-status"])
-    for line in staged_files.splitlines():
+    staged = run_git_command(["git", "diff", "--cached", "--name-status"])
+    for line in staged.splitlines():
+        if "\t" not in line:
+            continue
         status, file_path = line.split("\t", 1)
-        if any(re.search(pattern, file_path) for pattern in EXCLUDED_PATTERNS):
-            continue  # Skip this file
-        if Path(file_path).exists():
-            diff_content = run_git_command(["git", "diff", "--cached", "--numstat", "--", file_path])
-            if diff_content:
-                diff_lines = diff_content.splitlines()[:10]
-                diff_content = "\n".join(diff_lines) + "\n... (truncated)"
-            changes.append({"file": file_path, "status": status, "diff": diff_content})
+        if any(re.search(p, file_path) for p in EXCLUDED_PATTERNS):
+            continue
+        diff = run_git_command(["git", "diff", "--cached", "--", file_path])
+        diff = "\n".join(diff.splitlines()[:20]) + ("\n... (truncated)" if diff else "")
+        changes.append({"file": file_path, "status": status, "diff": diff or "No changes in diff"})
 
     # Unstaged changes
-    unstaged_files = run_git_command(["git", "diff", "--name-status"])
-    for line in unstaged_files.splitlines():
+    unstaged = run_git_command(["git", "diff", "--name-status"])
+    for line in unstaged.splitlines():
+        if "\t" not in line:
+            continue
         status, file_path = line.split("\t", 1)
-        if any(re.search(pattern, file_path) for pattern in EXCLUDED_PATTERNS):
-            continue  # Skip this file
-        if Path(file_path).exists():
-            diff_content = run_git_command(["git", "diff", "--", file_path])
-            if diff_content:
-                diff_lines = diff_content.splitlines()[:10]
-                diff_content = "\n".join(diff_lines) + "\n... (truncated)"
-            changes.append({"file": file_path, "status": status, "diff": diff_content})
+        if any(re.search(p, file_path) for p in EXCLUDED_PATTERNS):
+            continue
+        diff = run_git_command(["git", "diff", "--", file_path])
+        diff = "\n".join(diff.splitlines()[:20]) + ("\n... (truncated)" if diff else "")
+        changes.append({"file": file_path, "status": status, "diff": diff or "No changes in diff"})
 
     # Untracked files
-    untracked_files = run_git_command(["git", "ls-files", "--others", "--exclude-standard"]).splitlines()
-    for file_path in untracked_files:
-        if not file_path or any(re.search(pattern, file_path) for pattern in EXCLUDED_PATTERNS):
+    untracked = run_git_command(["git", "ls-files", "--others", "--exclude-standard"]).splitlines()
+    for file_path in untracked:
+        if not file_path or any(re.search(p, file_path) for p in EXCLUDED_PATTERNS):
             continue
-        changes.append({"file": file_path, "status": "A", "diff": "New file added"})
+        changes.append({"file": file_path, "status": "??", "diff": "New untracked file"})
 
-    # Remove duplicates
-    unique_changes = list({change["file"]: change for change in changes}.values())
-    logger.debug(f"Detected changes: {unique_changes}")
-    return unique_changes
+    unique: dict[str, dict[str, str]] = {}
+    for change in changes:
+        unique[change["file"]] = change
+
+    logger.debug(f"Detected {len(unique)} unique changes")
+    return list(unique.values())
 
 
-async def generate_commit_messages(changes: list[dict[str, str]], styleguide: str) -> list[dict[str, Any]]:
-    """Generate commit messages for the given changes."""
+async def generate_commit_groups(changes: list[dict[str, str]], styleguide: str) -> list[dict[str, Any]]:
+    """Generate grouped conventional commit messages by analyzing all changes at once."""
     if not changes:
-        logger.info("No changes to process")
+        logger.info("No changes detected")
         return []
 
     llm = get_llm()
     prompt = ChatPromptTemplate.from_template(
         """
-        You are a Git expert. Based on the following file change, generate a single commit message
-        summarizing all changes in the file, following the provided style guide. Classify the change
-        into a logical category (e.g., feature, bugfix, refactor, docs, setup).
+        You are an expert in Conventional Commits. Analyze ALL file changes below and group them into logical,
+        cohesive commits. Related changes should be combined.
 
         **Style Guide**:
         {styleguide}
 
-        **Change**:
-        File: {file}
-        Status: {status}
-        Diff (may be truncated to first 10 lines):
-        {diff}
+        **All Changes**:
+        {changes_summary}
 
         **Output Format**:
-        Your response must be only a JSON object in the following format:
-        {{"group": "category", "files": ["{file}"], "message": "commit message summarizing all changes"}}
-        Do not include any additional text, code blocks, explanations, or comments.
-        Ensure that the output is a valid JSON object.
+        Respond ONLY with a valid JSON array:
+        [
+          {{
+            "group": "<type> (e.g., feat, fix, refactor, docs, chore)",
+            "scope": "<optional scope>",
+            "message": "<type>[scope]: <description>",
+            "body": "<optional longer explanation>",
+            "files": ["file1.py", "file2.py", ...]
+          }},
+          ...
+        ]
 
-        **Important**: Do not generate a commit message in plain text. Only return the JSON object as specified.
+        Rules:
+        - Imperative present tense
+        - Description <= 72 chars
+        - Valid JSON only - no markdown or extra text
         """
     )
+
+    changes_summary = "\n\n".join(f"File: {c['file']}\nStatus: {c['status']}\nDiff:\n{c['diff']}" for c in changes)
+
     chain = prompt | llm | StrOutputParser()
+    raw = await chain.ainvoke({"styleguide": styleguide, "changes_summary": changes_summary})
 
-    async def process_change(change: dict[str, str]) -> dict[str, Any] | None:
-        """
-        Process a single file change and generate a commit message.
+    logger.info(f"Raw LLM output:\n{raw}")
 
-        Args:
-            change (dict): A dictionary containing file change information.
+    json_match = re.search(r"\[.*\]", raw, re.DOTALL)
+    if not json_match:
+        logger.error("No JSON array found in LLM response")
+        return []
 
-        Returns:
-            dict: A dictionary containing the generated commit message and group.
-        """
-        result = await chain.ainvoke(
-            {"styleguide": styleguide, "file": change["file"], "status": change["status"], "diff": change["diff"]}
-        )
-        logger.info(f"Raw LLM output for {change['file']}: {result}")
-        json_match = re.search(r"\{.*\}", result, re.DOTALL)
-        if not json_match:
-            logger.error(f"No JSON found in LLM output for {change['file']}")
-            return None
-        try:
-            group = json.loads(json_match.group(0))
-            if not all(key in group for key in ["group", "files", "message"]):
-                logger.error(f"Invalid JSON structure for {change['file']}: {group}")
-                return None
-            if group["files"] != [change["file"]]:
-                logger.error(f"Incorrect files in JSON for {change['file']}: {group['files']}")
-                return None
-            return group
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON parsing error for {change['file']}: {e}")
-            return None
-
-    tasks = [process_change(change) for change in changes]
-    groups = await asyncio.gather(*tasks)
-    return [group for group in groups if group is not None]
+    try:
+        groups = json.loads(json_match.group(0))
+        if not isinstance(groups, list):
+            logger.error("Parsed output is not a list")
+            return []
+        return groups
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parsing failed: {e}")
+        return []
 
 
 def write_commit_script(groups: list[dict[str, Any]]) -> Path:
-    """Write a shell script with git commands.
-
-    Args:
-        groups (list): A list of dictionaries containing commit messages and file groups.
-
-    Returns:
-        Path: The path to the generated shell script.
-
-
-    """
+    """Generate executable bash script with git commands."""
     script_path = Path("temp_output/commit_commands.sh")
     script_path.parent.mkdir(parents=True, exist_ok=True)
-    with script_path.open("w") as f:
-        f.write("#!/bin/bash\n\n")
-        for group in groups:
-            f.write(f"# {group['group']}\n")
-            for file in group["files"]:
-                f.write(f"git add {file}\n")
-            f.write(f'git commit -m "{group["message"]}"\n\n')
+
+    with script_path.open("w", encoding="utf-8") as f:
+        f.write("#!/bin/bash\n\nset -e\n\n")
+        for i, group in enumerate(groups, 1):
+            f.write(f"# Commit {i}: {group.get('message', 'Untitled')}\n")
+            if body := group.get("body"):
+                f.write(f"# {body.replace('\n', '\n# ')}\n")
+            for file in group.get("files", []):
+                f.write(f'git add "{file}"\n')
+            msg = group.get("message", "Update files")
+            f.write(f'git commit -m "{msg}"\n\n')
+
     script_path.chmod(0o755)
     return script_path
 
 
 def execute_commands(script_path: Path) -> None:
-    """Execute the generated commit commands interactively."""
-    logger.info(f"Generated commit commands in {script_path}")
-    with script_path.open("r") as f:
-        logger.info(f"Commands:\n{f.read()}")
+    """Display proposed commits and handle user decision."""
+    logger.info(f"Generated commit script: {script_path}")
+
+    logger.info("\n" + "=" * 60)
+    logger.info("PROPOSED COMMITS")
+    logger.info("=" * 60)
+    with script_path.open("r", encoding="utf-8") as f:
+        logger.info(f.read())
+    logger.info("=" * 60)
 
     while True:
-        choice = input("\nExecute these commands? (yes/no/edit): ").lower()
+        choice = input("\nExecute script? (yes/no/edit): ").strip().lower()
         if choice == "yes":
             try:
-                # Apply a git reset before any git add commands
-                subprocess.run(["git", "reset"], check=True)  # noqa: S607
-                logger.info("git reset executed successfully")
-                subprocess.run(["/bin/bash", str(script_path)], check=True)  # noqa: S603
-                logger.info("Commands executed successfully")
+                git_path = shutil.which("git")
+                bash_path = shutil.which("bash")
+                if not git_path or not bash_path:
+                    raise RuntimeError("git or bash not found in PATH")
+
+                # Safe execution with full paths from trusted PATH
+                subprocess.run([git_path, "reset"], check=True, cwd=Path.cwd())  # noqa: S603
+                subprocess.run([bash_path, str(script_path)], check=True, cwd=Path.cwd())  # noqa: S603
+                logger.info("Commits executed successfully")
                 break
             except subprocess.CalledProcessError as e:
-                logger.error(f"Error executing commands: {e}")
+                logger.error(f"Execution failed: {e}")
+                break
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
                 break
         elif choice == "no":
-            logger.info(f"Commands not executed. Run them manually from {script_path}")
+            logger.info(f"Script saved at {script_path} for manual execution")
             break
         elif choice == "edit":
-            logger.info(f"Please edit {script_path} and run it manually")
+            logger.info(f"Please edit {script_path} manually and run it")
             break
         else:
-            logger.warning("Invalid choice. Please enter 'yes', 'no', or 'edit'")
+            logger.warning("Invalid input. Please enter 'yes', 'no', or 'edit'")
 
 
 async def main() -> None:
-    """Main function to generate and execute commit messages."""
-    try:
-        styleguide = read_styleguide()
-        changes = get_changed_files()
-        if not changes:
-            logger.info("No changes found")
-            return
+    """Main entry point: detect changes, generate commits, and offer execution."""
+    styleguide = read_styleguide()
+    changes = get_changed_files()
+    if not changes:
+        logger.info("No changes to commit")
+        return
 
-        groups = await generate_commit_messages(changes, styleguide)
-        if not groups:
-            logger.info("No commit messages generated")
-            return
+    groups = await generate_commit_groups(changes, styleguide)
+    if not groups:
+        logger.info("No valid commit groups generated")
+        return
 
-        script_path = write_commit_script(groups)
-        execute_commands(script_path)
-    except Exception as e:
-        logger.error(f"Error: {e}")
+    script_path = write_commit_script(groups)
+    execute_commands(script_path)
 
 
 def run_main() -> None:
-    """Run the main function with asyncio (to be used as tool)"""
+    """Synchronous wrapper for running as a script or tool."""
     asyncio.run(main())
 
 
