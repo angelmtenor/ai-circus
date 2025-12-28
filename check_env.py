@@ -72,7 +72,7 @@ def check_manual_installs(example_env_path: Path | str = ".env.example") -> None
 
     for app in manual_installs:
         if shutil.which(app):
-            found.append(f"Success: {app}")
+            found.append(app)
         else:
             missing.append(f"Warning: {app} not found in PATH")
 
@@ -159,9 +159,9 @@ def check_virtual_environment(expected_venv_path: str = ".venv") -> None:
 
     # Check for uv (recommended tool)
     if shutil.which("uv"):
-        log("Success: uv is available (recommended for this project)")
+        log("Success: uv is available")
     else:
-        log("Info: 'uv' not found - recommended for faster installs")
+        log("Info: 'uv' not found")
         log("   Install: https://docs.astral.sh/uv/getting-started/installation/")
     log("")  # spacing
 
@@ -226,16 +226,16 @@ def check_python_packages(pyproject_path: str = "pyproject.toml", verbose: bool 
 
             if specifier not in {"(any)", "(invalid)"} and any(op in specifier for op in "<>="):
                 if Version(installed_ver) in SpecifierSet(specifier):
-                    record["status"] = "Success: OK"
+                    record["status"] = "OK"
                 else:
                     record["status"] = "Warning: Version mismatch"
             else:
-                record["status"] = "Success: OK"
+                record["status"] = "OK"
         except metadata.PackageNotFoundError:
             pass
 
         results.append(record)
-        if record["status"] != "Success: OK":
+        if record["status"] != "OK":
             problems.append(record)
 
     should_print = verbose or problems or not python_ok
