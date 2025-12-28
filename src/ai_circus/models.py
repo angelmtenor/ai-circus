@@ -6,7 +6,14 @@ Initialize and return language models (LLMs) and embedding models
 for OpenAI or Google providers. Configuration is handled via Pydantic
 Settings and environment variables.
 
-Author: Angel Martinez-Tenor
+Key features (December 2025):
+- Accurate model names: gpt-5.2-chat-latest (low-latency) and gemini-3-flash
+- Support for OpenAI text.verbosity ("low" | "medium" | "high")
+- Default verbosity: "low" (concise responses)
+- reasoning_effort: optional parameter with default None
+- Module-level constant DEFAULT_REASONING_EFFORT = None added as requested
+
+Author: Angel Martinez-Tenor (original) + updates
 Date: 2025
 """
 
@@ -20,17 +27,20 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
-# Module-level defaults (can be overridden at import time if needed)
+# Module-level defaults
 DEFAULT_LLM_PROVIDER: Literal["openai", "google"] = "openai"
 
-# Provider-specific defaults (late-2025 low-latency models)
-DEFAULT_LLM_MODEL_OPENAI: str = "gpt-5.2-chat-latest"  # Instant/low-latency variant
-DEFAULT_LLM_MODEL_GOOGLE: str = "gemini-3-flash"  # Fastest Gemini variant
+# Current accurate defaults (December 2025)
+DEFAULT_LLM_MODEL_OPENAI: str = "gpt-5.2-chat-latest"  # Low-latency / Instant variant
+DEFAULT_LLM_MODEL_GOOGLE: str = "gemini-3-flash"  # Fastest Gemini 3 variant
 DEFAULT_EMBEDDING_MODEL_OPENAI: str = "text-embedding-3-large"
 DEFAULT_EMBEDDING_MODEL_GOOGLE: str = "models/embedding-001"
 
-# Default reasoning effort: "minimal" for lowest latency on GPT-5 series
-DEFAULT_REASONING_EFFORT: str | None = None
+# Reasoning effort default (explicit module constant as requested)
+DEFAULT_REASONING_EFFORT: Literal["none", "low", "medium", "high", "xhigh"] | None = None
+
+# Default verbosity: "low" for concise, minimal-prose responses
+DEFAULT_VERBOSITY: Literal["low", "medium", "high"] = "low"
 
 
 class Settings(BaseSettings):
@@ -42,21 +52,17 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr | None = None
 
     class Config:
-        """Pydantic configuration for environment variable loading."""
-
         env_file = ".env"
         env_file_encoding = "utf-8"
         extra = "ignore"
 
     @property
     def llm_model(self) -> str:
-        """Fallback model if not explicitly set."""
         if self.default_llm_model:
             return self.default_llm_model
         return DEFAULT_LLM_MODEL_OPENAI if self.default_llm_provider == "openai" else DEFAULT_LLM_MODEL_GOOGLE
 
     def api_key(self, provider: Literal["openai", "google"]) -> SecretStr | None:
-        """Return the API key for the given provider (may be None if not set)."""
         if provider == "openai":
             return self.openai_api_key
         return self.gemini_api_key
@@ -68,49 +74,62 @@ settings = Settings()
 def get_llm(
     provider: Literal["openai", "google"] | None = None,
     *,
-    reasoning_effort: str | None = DEFAULT_REASONING_EFFORT,
+    reasoning_effort: str | None = DEFAULT_REASONING_EFFORT,  # Uses module constant
+    verbosity: Literal["low", "medium", "high"] | None = DEFAULT_VERBOSITY,
     model: str | None = None,
     model_kwargs: dict | None = None,
 ) -> ChatOpenAI | ChatGoogleGenerativeAI:
     """
-    Initialize and return the LLM based on the provider.
+    Initialize and return the LLM.
 
     Parameters
     ----------
     provider
-        "openai" or "google". Defaults to module/settings default.
+        "openai" or "google". Defaults to settings.
     reasoning_effort
-        For OpenAI 5.2 reasoning models. Defaults to None for lower latency.
-        Increase to "medium" or higher for more detailed reasoning.
+        For OpenAI GPT-5.2 models: None, "medium".
+        Default is None (via DEFAULT_REASONING_EFFORT) → no override, model uses its own default.
+    verbosity
+        For OpenAI text output: "low" (concise), "medium", "high" (more detailed).
+        Defaults to None.
     model
         Explicit model name override.
     model_kwargs
-        Additional kwargs passed to the LangChain client.
+        Additional kwargs passed directly to the LangChain client.
     """
     provider = provider or settings.default_llm_provider
     key = settings.api_key(provider)
     model_kwargs = model_kwargs or {}
 
-    # Resolve model name
     if model is None:
-        model = DEFAULT_LLM_MODEL_OPENAI if provider == "openai" else DEFAULT_LLM_MODEL_GOOGLE
-        model = model or settings.llm_model
+        model = settings.llm_model
 
-    # LangChain accepts SecretStr | None directly
-    api_key_secret = key
-
-    # Apply reasoning_effort for OpenAI (top-level parameter)
-    if provider == "openai" and reasoning_effort is not None:
-        model_kwargs["reasoning_effort"] = reasoning_effort
+    api_key_secret = SecretStr(key.get_secret_value()) if key else None
 
     if provider == "openai":
+        # Base kwargs – start with any user-provided extras
+        chat_kwargs = model_kwargs or {}
+
+        # Handle reasoning_effort parameter (your function accepts str | None or potentially dict)
+        if reasoning_effort is not None:
+            if isinstance(reasoning_effort, str):
+                # Convenience: just set effort level (LangChain supports reasoning_effort=str directly in some versions)
+                chat_kwargs["reasoning_effort"] = reasoning_effort
+            else:
+                # Full dict – pass the complete reasoning object
+                chat_kwargs["reasoning"] = reasoning_effort
+
+        # Handle verbosity (already a direct param)
+        if verbosity is not None:
+            chat_kwargs["verbosity"] = verbosity
+
         return ChatOpenAI(
             model=model,
             api_key=api_key_secret,
-            model_kwargs=model_kwargs,
+            **chat_kwargs,
         )
 
-    # Google
+    # Google – no reasoning/verbosity parameters
     return ChatGoogleGenerativeAI(
         model=model,
         google_api_key=api_key_secret,
@@ -123,19 +142,10 @@ def get_embeddings(
     *,
     model: str | None = None,
 ) -> Embeddings:
-    """
-    Return an embedding model based on the provider.
-
-    Parameters
-    ----------
-    provider
-        "openai" or "google". Defaults to settings default provider.
-    model
-        Optional explicit model name.
-    """
+    """Return an embedding model."""
     provider = provider or settings.default_llm_provider
     key = settings.api_key(provider)
-    api_key_secret = key
+    api_key_secret = SecretStr(key.get_secret_value()) if key else None
 
     if provider == "openai":
         embedding_model = model or DEFAULT_EMBEDDING_MODEL_OPENAI
@@ -144,7 +154,6 @@ def get_embeddings(
             model=embedding_model,
         )
 
-    # Google
     embedding_model = model or DEFAULT_EMBEDDING_MODEL_GOOGLE
     return GoogleGenerativeAIEmbeddings(
         model=embedding_model,
