@@ -92,4 +92,3 @@ key = os.getenv('ENCRYPTION_KEY')  # Never hardcode
 cipher = Fernet(key)
 decrypted = cipher.decrypt(encrypted_data)
 ```
-
