@@ -25,6 +25,11 @@ check-venv:
 
 	@echo "✅ Correct virtual environment is active: $$VIRTUAL_ENV"
 
+check-full-env:
+	@echo "🔍 Checking full environment setup..."
+	@python check_full_env.py || { echo "❌ Environment setup check failed."; exit 1; }
+	@echo "✅ Environment setup is correct!"
+
 # Run quality assurance checks
 qa: check-venv
 	@echo "🔍 Running quality assurance checks..."

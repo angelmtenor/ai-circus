@@ -1,5 +1,5 @@
 """
-check_env.py
+check_full_env.py
 
 Utility script to verify the environment setup.
 
