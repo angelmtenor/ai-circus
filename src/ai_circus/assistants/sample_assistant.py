@@ -216,5 +216,10 @@ def run_assistant_workflow() -> None:
         raise ValueError(f"Unexpected workflow failure: {e}") from e
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Main function to run the assistant workflow."""
     run_assistant_workflow()
+
+
+if __name__ == "__main__":
+    main()

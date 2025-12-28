@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     openai_api_key: SecretStr = SecretStr("")
-    google_api_key: SecretStr = SecretStr("")
+    gemini_api_key: SecretStr = SecretStr("")
     gemini_api_key: SecretStr = SecretStr("")
     tavily_api_key: SecretStr = SecretStr("")
 
@@ -123,7 +123,7 @@ def main() -> None:
     # Retrieve API keys
     api_keys = {
         "OpenAI": settings.openai_api_key.get_secret_value(),
-        "Google": settings.google_api_key.get_secret_value(),
+        "Google": settings.gemini_api_key.get_secret_value(),
         "Gemini": settings.gemini_api_key.get_secret_value(),
         "Tavily": settings.tavily_api_key.get_secret_value(),
     }

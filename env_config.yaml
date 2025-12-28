@@ -13,7 +13,7 @@ env_variables:
       regex: ^[a-zA-Z0-9-]{20,}$  # Basic pattern for API key (e.g., min 20 chars, alphanumeric)
       error_message: "Invalid OpenAI API key format. Expected a string of at least 20 alphanumeric characters."
 
-  - name: GOOGLE_API_KEY
+  - name: GEMINI_API_KEY
     description: API key for accessing Google services (e.g., Maps, Cloud)
     type: string
     mandatory: false

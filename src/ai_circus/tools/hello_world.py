@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     app_name: str = "AI Circus"
     openai_api_key: SecretStr = SecretStr("")
-    google_api_key: SecretStr = SecretStr("")
+    gemini_api_key: SecretStr = SecretStr("")
 
     class Config:
         """Pydantic configuration for environment variable loading."""
