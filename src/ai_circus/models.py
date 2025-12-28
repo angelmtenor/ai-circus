@@ -37,7 +37,7 @@ DEFAULT_EMBEDDING_MODEL_OPENAI: str = "text-embedding-3-large"
 DEFAULT_EMBEDDING_MODEL_GOOGLE: str = "models/embedding-001"
 
 # Reasoning effort default (explicit module constant as requested)
-DEFAULT_REASONING_EFFORT: Literal["none", "low", "medium", "high", "xhigh"] | None = None
+DEFAULT_REASONING_EFFORT: Literal["low", "medium", "high"] | None = None
 
 # Default verbosity: "low" for concise, minimal-prose responses
 DEFAULT_VERBOSITY: Literal["low", "medium", "high"] = "low"
@@ -52,17 +52,21 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr | None = None
 
     class Config:
+        """Pydantic configuration for settings."""
+
         env_file = ".env"
         env_file_encoding = "utf-8"
         extra = "ignore"
 
     @property
     def llm_model(self) -> str:
+        """Return the effective LLM model name, falling back to provider defaults."""
         if self.default_llm_model:
             return self.default_llm_model
         return DEFAULT_LLM_MODEL_OPENAI if self.default_llm_provider == "openai" else DEFAULT_LLM_MODEL_GOOGLE
 
     def api_key(self, provider: Literal["openai", "google"]) -> SecretStr | None:
+        """Return the API key for the specified provider."""
         if provider == "openai":
             return self.openai_api_key
         return self.gemini_api_key
@@ -107,17 +111,10 @@ def get_llm(
     api_key_secret = SecretStr(key.get_secret_value()) if key else None
 
     if provider == "openai":
-        # Base kwargs – start with any user-provided extras
+        # Base kwargs - start with any user-provided extras
         chat_kwargs = model_kwargs or {}
 
-        # Handle reasoning_effort parameter (your function accepts str | None or potentially dict)
-        if reasoning_effort is not None:
-            if isinstance(reasoning_effort, str):
-                # Convenience: just set effort level (LangChain supports reasoning_effort=str directly in some versions)
-                chat_kwargs["reasoning_effort"] = reasoning_effort
-            else:
-                # Full dict – pass the complete reasoning object
-                chat_kwargs["reasoning"] = reasoning_effort
+        chat_kwargs["reasoning_effort"] = reasoning_effort
 
         # Handle verbosity (already a direct param)
         if verbosity is not None:
@@ -129,7 +126,7 @@ def get_llm(
             **chat_kwargs,
         )
 
-    # Google – no reasoning/verbosity parameters
+    # Google - no reasoning/verbosity parameters
     return ChatGoogleGenerativeAI(
         model=model,
         google_api_key=api_key_secret,
