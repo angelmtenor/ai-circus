@@ -57,13 +57,11 @@ class APIClient:
         """Fetch data from an API with the given configuration."""
         try:
             with httpx.Client() as client:
-                # Base request kwargs, excluding json for GET requests
-                request_kwargs = {
-                    "url": config.url,
-                    "timeout": 10.0,
-                    "headers": config.headers or {},
-                    "params": config.params,
-                }
+                request_kwargs: dict = {"url": config.url, "timeout": 10.0}
+                if config.headers:
+                    request_kwargs["headers"] = config.headers
+                if config.params:
+                    request_kwargs["params"] = config.params
                 # Only include json for POST requests
                 if config.method.upper() == "POST":
                     request_kwargs["json"] = config.json
@@ -72,8 +70,20 @@ class APIClient:
                     response = client.get(**request_kwargs)
                 else:
                     response = client.post(**request_kwargs)
-                response.raise_for_status()
-                return response.json()
+                try:
+                    response.raise_for_status()
+                except httpx.HTTPStatusError as e:
+                    resp = e.response
+                    body = resp.text if resp is not None else "<no response body>"
+                    status = resp.status_code if resp is not None else "<no status>"
+                    logger.error(f"Failed to fetch {config.name} data: status={status} body={body}")
+                    return None
+                # Safely parse JSON responses
+                try:
+                    return response.json()
+                except ValueError:
+                    logger.error(f"Non-JSON response from {config.name}: {response.text}")
+                    return None
         except httpx.HTTPError as e:
             logger.error(f"Failed to fetch {config.name} data: {e}")
             return None
@@ -93,7 +103,8 @@ def main() -> None:
         ),
         APIConfig(
             name="Google",
-            url=lambda key: f"https://www.googleapis.com/discovery/v1/apis?key={key}",
+            url="https://www.googleapis.com/discovery/v1/apis",
+            params=lambda key: {"key": key},
         ),
         APIConfig(
             name="Tavily",
@@ -130,8 +141,16 @@ def main() -> None:
 
         data = client.fetch_data(config)
         if data:
-            key = "data" if config.name == "OpenAI" else "items" if config.name == "Google" else "results"
-            logger.info(f"{config.name} data retrieved: {data.get(key, [])[:1]}")
+            if isinstance(data, dict):
+                key = "data" if config.name == "OpenAI" else "items" if config.name == "Google" else "results"
+                sample = data.get(key, [])
+                try:
+                    preview = sample[:1]
+                except Exception:
+                    preview = sample
+                logger.info(f"{config.name} data retrieved: {preview}")
+            else:
+                logger.info(f"{config.name} data retrieved (non-dict): type={type(data)}")
             checklist.append(f"[✔] {config.name}: data retrieved")
         else:
             checklist.append(f"[ ] {config.name}: call failed")
