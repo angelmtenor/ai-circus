@@ -1,17 +1,9 @@
 """
 check_full_env.py
 
-Utility script to verify the environment setup.
+Enhanced environment verification utility with beautiful, Makefile-aligned output.
 
-Checks:
-- Virtual environment activation and path
-- Python version compatibility (from pyproject.toml)
-- Required Python packages
-- Environment variables (against .env.example)
-- Manually installed CLI tools (e.g., uv, node, etc.)
-
-Original: Langchain Community: https://github.com/langchain-ai/lca-lc-foundations, 2025
-Adapted by: Angel Martinez-Tenor, 2025
+Author: Angel Martinez-Tenor, 2025
 """
 
 from __future__ import annotations
@@ -20,36 +12,181 @@ import os
 import shutil
 import sys
 import tomllib
+from argparse import ArgumentParser
 from importlib import metadata
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from dotenv import dotenv_values, load_dotenv
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from ai_circus.core.logger import configure_logger
-
-# Configure logger early
-logger = configure_logger(level="INFO")
-log = logger.info
-warn = logger.warning
-error = logger.error
+# ──────────────────────────────────────────────────────────────────────────────
+# Define a minimal Printer protocol that both rich and fallback support
+# ──────────────────────────────────────────────────────────────────────────────
 
 
-def summarize_value(value: str | None) -> str:
-    """Safely summarize sensitive values (API keys, booleans)."""
-    if not value:
-        return "<not set>"
-    lower = value.lower()
-    if lower in {"true", "false"}:
-        return lower
-    return "****" + value[-4:] if len(value) >= 4 else "****"
+class Printer(Protocol):
+    """Protocol for a callable printer that supports both rich and fallback implementations."""
+
+    def __call__(self, *objects: Any, sep: str = " ", end: str = "\n", **kwargs: Any) -> None:
+        """Print the given objects with specified separators and end character."""
+        ...
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Rich imports with graceful fallback
+# ──────────────────────────────────────────────────────────────────────────────
+
+try:
+    from rich.console import Console
+    from rich.panel import Panel as RichPanel
+    from rich.table import Table as RichTable
+
+    console = Console()
+    printer: Printer = console.print
+    Panel: Any = RichPanel
+    Table: Any = RichTable
+except ImportError:  # Fallback if rich not installed
+    console = None
+
+    builtin_print = __builtins__["print"] if isinstance(__builtins__, dict) else __builtins__.print
+
+    def fallback_printer(*objects: Any, sep: str = " ", end: str = "\n", **kwargs: Any) -> None:
+        """Fallback printer that delegates to the builtin print."""
+        # Ignore unused kwargs that rich supports but builtin doesn't
+        kwargs.pop("style", None)
+        kwargs.pop("justify", None)
+        kwargs.pop("overflow", None)
+        kwargs.pop("no_wrap", None)
+        kwargs.pop("emoji", None)
+        kwargs.pop("markup", None)
+        kwargs.pop("highlight", None)
+        kwargs.pop("width", None)
+        kwargs.pop("height", None)
+        kwargs.pop("crop", None)
+        kwargs.pop("soft_wrap", None)
+        kwargs.pop("new_line_start", None)
+        builtin_print(*objects, sep=sep, end=end, **kwargs)
+
+    printer = fallback_printer
+
+    def panel(
+        content: str | object,
+        title: str | None = None,
+        style: str = "bold cyan",
+        **kwargs: object,
+    ) -> str:
+        """Fallback panel renderer used when `rich` is not installed."""
+        del style, kwargs  # Unused in fallback
+        content_str = str(content)
+        border = "═" * (len(content_str) + 4)
+        title_line = f" {title} " if title else ""
+        return f"\n{border}\n{title_line}\n{border}\n  {content_str}  \n{border}\n"
+
+    Panel = panel
+
+    class FallbackTable:
+        """Simple ASCII table fallback when rich is not available."""
+
+        def __init__(self) -> None:
+            """Initialize an empty fallback table."""
+            self.rows: list[tuple[str, ...]] = []
+            self.headers: list[str] = []
+
+        def add_row(self, *cells: str) -> None:
+            """Add a row of cells to the table."""
+            self.rows.append(cells)
+
+        def __str__(self) -> str:
+            if not self.headers or not self.rows:
+                return ""
+
+            all_rows = [self.headers, *self.rows]
+            widths = [max(len(str(cell)) for cell in col) for col in zip(*all_rows, strict=False)]
+
+            header_line = " │ ".join(h.ljust(w) for h, w in zip(self.headers, widths, strict=False))
+            sep = "─┼─".join("─" * w for w in widths)
+            body = "\n".join(
+                " │ ".join(str(c).ljust(w) for c, w in zip(row, widths, strict=False)) for row in self.rows
+            )
+            return f"{header_line}\n{sep}\n{body}"
+
+    Table = FallbackTable
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+
+parser = ArgumentParser(description="Check full project environment setup")
+parser.add_argument("--verbose", "-v", action="store_true", help="Show all package details")
+args = parser.parse_args()
+
+issues_found = False
+
+
+def log_success(msg: str) -> None:
+    """Log a success message in green."""
+    printer(f"[bold green]✅ {msg}[/bold green]")
+
+
+def log_warning(msg: str) -> None:
+    """Log a warning message in yellow and mark issues found."""
+    global issues_found
+    issues_found = True
+    printer(f"[bold yellow]⚠️ {msg}[/bold yellow]")
+
+
+def log_error(msg: str) -> None:
+    """Log an error message in red and mark issues found."""
+    global issues_found
+    issues_found = True
+    printer(f"[bold red]❌ {msg}[/bold red]")
+
+
+def log_info(msg: str) -> None:
+    """Log an informational message in cyan."""
+    printer(f"[cyan]🔍 {msg}[/cyan]")
+
+
+def section(title: str) -> None:
+    """Print a titled section header."""
+    printer(Panel(title, style="bold magenta", padding=(1, 2)))
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def check_virtual_environment(expected_venv_path: str = ".venv") -> None:
+    """Check and report on the currently active Python virtual environment."""
+    section("Virtual Environment")
+
+    in_venv = hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix)
+    current_prefix = Path(sys.prefix).resolve()
+    expected_path = Path(expected_venv_path).resolve()
+
+    printer(f"Active venv path: [dim]{current_prefix}[/dim]")
+
+    if not in_venv:
+        log_error("No virtual environment is activated")
+        printer("   Run: [bold]source .venv/bin/activate[/bold] (macOS/Linux)")
+        printer("   Or:  [bold].venv\\Scripts\\activate[/bold] (Windows)")
+        return
+
+    if current_prefix != expected_path:
+        log_error(f"Wrong venv activated!\n   Expected: {expected_path}\n   Active:   {current_prefix}")
+    else:
+        log_success("Correct virtual environment is active")
+
+    if shutil.which("uv"):
+        log_success("uv is available in PATH")
+    else:
+        log_warning("uv not found in PATH")
+        printer("   Install: https://docs.astral.sh/uv/getting-started/installation/")
 
 
 def check_manual_installs(example_env_path: Path | str = ".env.example") -> None:
-    """Check availability of manually installed tools listed in .env.example."""
+    """Check for CLI tools listed in `.env.example` under a marker."""
     path = Path(example_env_path)
     if not path.exists():
         return
@@ -66,120 +203,90 @@ def check_manual_installs(example_env_path: Path | str = ".env.example") -> None
     if not manual_installs:
         return
 
-    log("Manual Installs Check:")
-    found = []
-    missing = []
+    section("Manual Installs (CLI Tools)")
+
+    missing = [app for app in manual_installs if not shutil.which(app)]
 
     for app in manual_installs:
         if shutil.which(app):
-            found.append(app)
+            log_success(f"{app} found")
         else:
-            missing.append(f"Warning: {app} not found in PATH")
-
-    for item in found:
-        log(item)
-    for item in missing:
-        warn(item)
+            log_warning(f"{app} not found in PATH")
 
     if missing:
-        warn("Consider installing missing tools or adding them to your PATH.")
-    log("")  # empty line for spacing
+        printer("   Consider installing missing tools or adding them to PATH.")
+
+
+def summarize_value(value: str | None) -> str:
+    """Return a redacted summary of an environment variable value."""
+    if not value:
+        return "[dim]<not set>[/dim]"
+    if value.lower() in {"true", "false"}:
+        return value.lower()
+    return "****" + value[-4:] if len(value) >= 4 else "****"
 
 
 def check_environment_variables(example_env_path: Path | str = ".env.example") -> None:
-    """Compare current env vars with .env.example, highlighting unset or placeholder values."""
+    """Validate environment variables against `.env.example`."""
     path = Path(example_env_path)
     if not path.exists():
-        warn(f".env.example not found at {path}. Skipping environment variable check.")
+        log_warning(f".env.example not found at {path}")
         return
 
-    # Identify required keys (marked with "required" in comments above section)
-    required_keys: dict[str, str] = {}
-    with path.open("r", encoding="utf-8") as f:
-        lines = f.readlines()
+    section("Environment Variables")
 
-    in_required_section = False
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("#"):
-            in_required_section = "required" in stripped.lower()
-            continue
-
-        if "=" in stripped and not stripped.startswith("#"):
-            key = stripped.split("=", 1)[0].strip()
-            value = stripped.split("=", 1)[1].strip().strip("\"'")
-            if in_required_section:
-                required_keys[key] = value
-
-    # Load all keys from .env.example
     example_vars = dotenv_values(path)
-    issues: list[str] = []
+    required_keys: set[str] = set()
 
-    log("Environment Variables Check:")
+    with path.open("r", encoding="utf-8") as f:
+        in_required = False
+        for line in f:
+            stripped = line.strip()
+            if stripped.startswith("#") and "required" in stripped.lower():
+                in_required = True
+                continue
+            if "=" in stripped and not stripped.startswith("#"):
+                key = stripped.split("=", 1)[0].strip()
+                if in_required:
+                    required_keys.add(key)
+                in_required = False
+
+    table = Table()
+
+    if console:  # Rich Table
+        table.add_row("Key", "Value", "Status", style="bold")
+        table.show_header = True
+    else:  # FallbackTable
+        table.headers = ["Key", "Value", "Status"]
+
     for key in sorted(example_vars.keys()):
         current = os.getenv(key)
         summary = summarize_value(current)
-        log(f"{key}={summary}")
+        example_val = example_vars.get(key) or ""
+        placeholder = example_val.strip("\"'")
 
         if key in required_keys:
-            example_val = required_keys[key]
             if current is None:
-                issues.append(f"Warning: {key} is required but not set")
-            elif current == example_val:
-                issues.append(f"Warning: {key} still has placeholder/example value")
+                status = "[red]Missing (required)[/red]"
+                log_error(f"{key} is required but not set")
+            elif current == placeholder:
+                status = "[yellow]Placeholder value[/yellow]"
+                log_warning(f"{key} still has example/placeholder value")
+            else:
+                status = "[green]Set[/green]"
+        else:
+            status = "[green]Set[/green]" if current else "[dim]Optional[/dim]"
 
-    if issues:
-        log("")  # spacing
-        log("Issues found:")
-        for issue in issues:
-            warn(issue)
-    log("")  # final spacing
+        table.add_row(key, summary, status)
 
-
-def check_virtual_environment(expected_venv_path: str = ".venv") -> None:
-    """Verify that the correct virtual environment is activated and display its path."""
-    log("Virtual Environment Check:")
-
-    in_venv = hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix)
-
-    current_prefix = Path(sys.prefix).resolve()
-    expected_path = Path(expected_venv_path).resolve()
-
-    # Display the active virtual environment path once, prominently
-    log(f"Active virtual environment path: {current_prefix}")
-
-    if not in_venv:
-        warn("Virtual environment is not activated")
-        warn("   -> Run: source .venv/bin/activate   (macOS/Linux)")
-        warn("   -> Or: .venv\\Scripts\\activate     (Windows)")
-    elif current_prefix != expected_path:
-        warn(f"Activated venv ({current_prefix}) does not match expected ({expected_path})")
-    else:
-        log("Success: Virtual environment is properly activated")
-
-    # Check for uv (recommended tool)
-    if shutil.which("uv"):
-        log("Success: uv is available")
-    else:
-        log("Info: 'uv' not found")
-        log("   Install: https://docs.astral.sh/uv/getting-started/installation/")
-    log("")  # spacing
+    printer(table)
 
 
-def _format_table(rows: list[list[str]], headers: list[str]) -> str:
-    """Simple left-aligned table formatting."""
-    widths = [max(len(str(cell)) for cell in col) for col in zip(*rows, headers, strict=True)]
-    header_row = " | ".join(h.ljust(w) for h, w in zip(headers, widths, strict=True))
-    separator = " | ".join("-" * w for w in widths)
-    body = "\n".join(" | ".join(str(c).ljust(w) for c, w in zip(row, widths, strict=True)) for row in rows)
-    return f"{header_row}\n{separator}\n{body}"
-
-
-def check_python_packages(pyproject_path: str = "pyproject.toml", verbose: bool = False) -> None:
-    """Check Python version and package dependencies against pyproject.toml (without path column)."""
+def check_python_packages(pyproject_path: str = "pyproject.toml") -> None:
+    """Check that packages declared in `pyproject.toml` are installed."""
     p = Path(pyproject_path)
     if not p.exists():
-        error(f"{pyproject_path} not found in {p.cwd()}")
+        log_error(f"{pyproject_path} not found")
         return
 
     with p.open("rb") as f:
@@ -192,18 +299,24 @@ def check_python_packages(pyproject_path: str = "pyproject.toml", verbose: bool 
     current_version = Version(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
     python_ok = current_version in SpecifierSet(requires_python)
 
-    status = "OK" if python_ok else "FAIL"
-    log(f"Python {current_version} -> requires-python: {requires_python} -> {status}")
+    section("Python Packages")
+
+    status = "[green]OK[/green]" if python_ok else "[red]FAIL[/red]"
+    printer(f"Python version: {current_version} → requires-python: {requires_python} → {status}")
 
     if not dependencies:
-        if verbose or not python_ok:
-            log("No dependencies listed in pyproject.toml")
-            log(f"Executable: {sys.executable}")
+        log_info("No dependencies declared in pyproject.toml")
         return
 
-    results: list[dict[str, Any]] = []
-    problems: list[dict[str, Any]] = []
+    table = Table()
 
+    if console:
+        table.add_row("Package", "Required", "Installed", "Status", style="bold")
+        table.show_header = True
+    else:
+        table.headers = ["Package", "Required", "Installed", "Status"]
+
+    problems = 0
     for dep_str in dependencies:
         try:
             req = Requirement(dep_str)
@@ -213,73 +326,49 @@ def check_python_packages(pyproject_path: str = "pyproject.toml", verbose: bool 
             name = dep_str.split()[0] if dep_str else "unknown"
             specifier = "(invalid)"
 
-        record = {
-            "package": name,
-            "required": specifier,
-            "installed": "-",
-            "status": "Error: Missing",
-        }
-
         try:
             installed_ver = metadata.version(name)
-            record["installed"] = installed_ver
-
-            if specifier not in {"(any)", "(invalid)"} and any(op in specifier for op in "<>="):
-                if Version(installed_ver) in SpecifierSet(specifier):
-                    record["status"] = "OK"
-                else:
-                    record["status"] = "Warning: Version mismatch"
+            if specifier not in {"(any)", "(invalid)"} and Version(installed_ver) in SpecifierSet(specifier):
+                status = "[green]OK[/green]"
             else:
-                record["status"] = "OK"
+                status = "[yellow]Version mismatch[/yellow]"
+                problems += 1
         except metadata.PackageNotFoundError:
-            pass
+            installed_ver = "[dim]Not installed[/dim]"
+            status = "[red]Missing[/red]"
+            problems += 1
 
-        results.append(record)
-        if record["status"] != "OK":
-            problems.append(record)
+        if args.verbose or status != "[green]OK[/green]":
+            table.add_row(name, specifier, installed_ver, status)
 
-    should_print = verbose or problems or not python_ok
-    if should_print:
-        rows = [
-            [
-                r["package"],
-                r["required"],
-                r["installed"],
-                r["status"],
-            ]
-            for r in results
-        ]
+    has_rows = (console and getattr(table, "row_count", 0) > 0) or (not console and table.rows)
+    if has_rows:
+        printer(table)
 
-        table = _format_table(rows, ["Package", "Required", "Installed", "Status"])
-        log(table)
-
-        if problems:
-            log("")  # spacing
-            log("Package Issues:")
-            for prob in problems:
-                warn(
-                    f"- {prob['package']}: {prob['status']} "
-                    f"(required {prob['required']}, installed {prob['installed']})"
-                )
-
-        log(f"\nEnvironment: {sys.executable}")
-
+    if problems == 0:
+        log_success("All required packages are installed and compatible")
     else:
-        log("Success: All Python packages are correctly installed and compatible")
+        log_warning(f"{problems} package issue(s) found")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 def main() -> None:
-    """Run all environment checks."""
-    log("AI Circus Environment Check")
-    log("=" * 40)
+    """Run the full environment checks and print a summary panel."""
+    printer(Panel("AI Circus Environment Check", style="bold blue", padding=(1, 3)))
 
     check_virtual_environment()
     check_manual_installs()
-    load_dotenv()  # Load .env if present
+    load_dotenv()
     check_environment_variables()
-    check_python_packages(verbose=True)
+    check_python_packages()
 
-    log("Check complete.")
+    printer("\n" + "═" * 60)
+    if not issues_found:
+        printer(Panel("[bold green]✅ All checks passed! Environment is ready.[/bold green]", style="green"))
+    else:
+        printer(Panel("[bold yellow]⚠️  Some issues were found. Review warnings above.[/bold yellow]", style="yellow"))
 
 
 if __name__ == "__main__":
