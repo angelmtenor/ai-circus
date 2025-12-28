@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     openai_api_key: SecretStr = SecretStr("")
     google_api_key: SecretStr = SecretStr("")
+    gemini_api_key: SecretStr = SecretStr("")
     tavily_api_key: SecretStr = SecretStr("")
 
     class Config:
@@ -107,6 +108,11 @@ def main() -> None:
             params=lambda key: {"key": key},
         ),
         APIConfig(
+            name="Gemini",
+            url="https://generativelanguage.googleapis.com/v1/models",
+            params=lambda key: {"key": key},
+        ),
+        APIConfig(
             name="Tavily",
             url="https://api.tavily.com/search",
             method="POST",
@@ -118,6 +124,7 @@ def main() -> None:
     api_keys = {
         "OpenAI": settings.openai_api_key.get_secret_value(),
         "Google": settings.google_api_key.get_secret_value(),
+        "Gemini": settings.gemini_api_key.get_secret_value(),
         "Tavily": settings.tavily_api_key.get_secret_value(),
     }
 
