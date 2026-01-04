@@ -53,7 +53,7 @@ dependencies = [
     "pydantic-settings>=2.9.1",
     "python-dotenv>=1.1.0",
     "qdrant-client>=1.14.2",
-    "unstructured[docx,pdf]>=0.17.2",
+    "unstructured[docx,pdf]>=0.17.2", # Note: it installs many dependencies: torch, cuda, etc.
 ]
 
 [project.urls]
