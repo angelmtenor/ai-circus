@@ -111,19 +111,26 @@ This file outlines the main components, tools, and frameworks of our software an
 
 ### Core Libraries
 
-| Category                  | Libraries                                                                                 |
-|----------------------------|------------------------------------------------------------------------------------------|
-| **Deep Learning (DL)**     | PyTorch, Keras                                                                          |
-| **Machine Learning (ML)**  | scikit-learn, shap, shapiq                                                              |
-| **Natural Language Processing (NLP)** | nltk, gensim, gluonnlp                                                      |
-| **Data Handling & Manipulation** | pandas, numpy, collections, re (regex), datetime, pickle, networkx               |
-| **Visualization & Plotting** | seaborn, matplotlib, pandas plot, plotly, missingno                                     |
-| **Web & APIs**             | beautifulsoup4                                                                          |
-| **Generic Utilities**      | random, time, os, pathlib, warnings                                                    |
-| **Scaling / Parallelism**  | dask, swifter
-| **Cryptography / Security** | cryptography
+| Category | Libraries |
+|--------|-----------|
+| **Deep Learning (DL)** | PyTorch, Keras |
+| **Machine Learning (ML)** | scikit-learn, shap, shapiq |
+| **Natural Language Processing (NLP)** | nltk, gensim, gluonnlp |
+| **Data Handling & Manipulation** | pandas, numpy, polars, collections, re (regex), datetime, pickle, networkx |
+| **Visualization & Plotting** | seaborn, matplotlib, pandas plot, plotly, missingno |
+| **Web Apps & Dashboards** | streamlit |
+| **Web & APIs** | fastapi, beautifulsoup4 |
+| **Data Validation & Models** | pydantic, sqlmodel |
+| **Workflow Orchestration** | prefect |
+| **Databases / Analytics Engines** | duckdb |
+| **Browser Automation / Scraping** | playwright |
+| **CLI Tooling** | typer |
+| **Scaling / Parallelism** | dask, swifter |
+| **Generic Utilities** | random, time, os, pathlib, warnings |
+| **Cryptography / Security** | cryptography |
 
 ### Additional Useful Libraries
+
 - **MLflow:** ML lifecycle platform
 - **Optuna:** Hyperparameter optimization
 - **Talos / Hyperas:** Hyperparameter scanning for Keras
