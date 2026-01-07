@@ -154,5 +154,5 @@ def get_embeddings(
     embedding_model = model or DEFAULT_EMBEDDING_MODEL_GOOGLE
     return GoogleGenerativeAIEmbeddings(
         model=embedding_model,
-        api_key=api_key_secret,
+        google_api_key=api_key_secret,
     )
