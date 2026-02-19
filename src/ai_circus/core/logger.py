@@ -29,8 +29,11 @@ CONSOLE_FORMAT = (
 )
 FILE_FORMAT = "{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {file.name}:{line} | {extra[name]} | {message}"
 
-# === Idempotency guard ===
 _configured = False
+
+# Global extra defaults — prevents KeyError when format uses {extra[name]}
+# Any unbound logger.info(...) call will show "-" instead of crashing.
+logger.configure(extra={"name": "-"})
 
 
 # === Config — BaseModel instead of Pydantic dataclass ===
@@ -63,7 +66,7 @@ def configure_logger(config: LoggerConfig | None = None, **kwargs: Any) -> Any:
     global _configured
 
     if _configured:
-        logger.debug("Logger already configured — skipping reconfiguration.")
+        logger.bind(name="logger").debug("Logger already configured — skipping reconfiguration.")
         return logger
 
     logger.remove()  # Reset existing handlers
@@ -93,7 +96,7 @@ def configure_logger(config: LoggerConfig | None = None, **kwargs: Any) -> Any:
             logger.add(log_filepath, level=config.level, format=FILE_FORMAT)
             bound.debug(f"Logging to file: {log_filepath}")
         except OSError as e:
-            logger.error(f"Failed to create log file: {e}")
+            logger.bind(name="logger").error(f"Failed to create log file: {e}")
             raise ValueError(f"Could not create log file: {e}") from e
 
     _configured = True
