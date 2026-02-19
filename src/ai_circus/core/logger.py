@@ -11,8 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from loguru import logger
-from pydantic import Field, ValidationError
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Field, ValidationError
 
 # === Constants ===
 LOG_DIR = Path("log")
@@ -20,17 +19,22 @@ FILENAME_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 DEFAULT_LOG_LEVEL = "INFO"
 
 # === Log Format Templates ===
+# {extra[name]} is now included so get_logger() bindings are visible
 CONSOLE_FORMAT = (
     "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
     "<level>{level:<8}</level> | "
     "<cyan>{file.name}:{line}</cyan> | "
+    "<cyan>{extra[name]}</cyan> | "
     "<level>{message}</level>"
 )
-FILE_FORMAT = "{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {file.name}:{line} | {message}"
+FILE_FORMAT = "{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {file.name}:{line} | {extra[name]} | {message}"
+
+# === Idempotency guard ===
+_configured = False
 
 
-@dataclass
-class LoggerConfig:
+# === Config — BaseModel instead of Pydantic dataclass ===
+class LoggerConfig(BaseModel):
     """Configuration for the logger."""
 
     level: str = Field(default=DEFAULT_LOG_LEVEL, pattern=r"^(TRACE|DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
@@ -43,8 +47,11 @@ class LoggerConfig:
 def configure_logger(config: LoggerConfig | None = None, **kwargs: Any) -> Any:
     """Configure and return the Loguru logger.
 
+    Idempotent: calling this more than once resets and reconfigures handlers,
+    but a module-level guard prevents accidental re-configuration across imports.
+
     Args:
-        config: Logger configuration. If provided, overrides keyword arguments.
+        config: Logger configuration. If provided, kwargs are ignored.
         **kwargs: Keyword arguments for LoggerConfig (e.g., level, save_to_file).
 
     Returns:
@@ -53,22 +60,28 @@ def configure_logger(config: LoggerConfig | None = None, **kwargs: Any) -> Any:
     Raises:
         ValueError: If log file creation fails or configuration is invalid.
     """
+    global _configured
+
+    if _configured:
+        logger.debug("Logger already configured — skipping reconfiguration.")
+        return logger
+
     logger.remove()  # Reset existing handlers
 
-    # Use provided config or create from kwargs
+    # Build config from kwargs if no config object provided
     if config is None:
         try:
             config = LoggerConfig(**kwargs)
         except ValidationError as e:
             raise ValueError(f"Invalid logger configuration: {e}") from e
-    else:
-        if kwargs:
-            raise ValueError("Cannot provide both config and keyword arguments")
 
-    # Configure console output
+    # Bind a default name so the format never breaks
+    bound = logger.bind(name="root")
+
+    # Console handler
     logger.add(sys.stdout, level=config.level, format=CONSOLE_FORMAT)
 
-    # Configure file output if enabled
+    # File handler
     if config.save_to_file:
         log_filepath = _resolve_log_filepath(
             subfolder=config.subfolder,
@@ -78,19 +91,20 @@ def configure_logger(config: LoggerConfig | None = None, **kwargs: Any) -> Any:
         try:
             log_filepath.parent.mkdir(parents=True, exist_ok=True)
             logger.add(log_filepath, level=config.level, format=FILE_FORMAT)
-            logger.debug(f"Logging to file: {log_filepath}")
+            bound.debug(f"Logging to file: {log_filepath}")
         except OSError as e:
             logger.error(f"Failed to create log file: {e}")
             raise ValueError(f"Could not create log file: {e}") from e
 
+    _configured = True
     return logger
 
 
 def get_logger(name: str) -> Any:
-    """Return a logger instance with a custom name.
+    """Return a logger bound to a descriptive name (visible in log output).
 
     Args:
-        name: Descriptive name to tag log messages.
+        name: Module or component name to tag log messages.
 
     Returns:
         Bound Loguru logger instance.
@@ -103,16 +117,7 @@ def _resolve_log_filepath(
     filename_modifier: str,
     force_filepath: Path | None,
 ) -> Path:
-    """Determine the log file path.
-
-    Args:
-        subfolder: Subfolder under log directory.
-        filename_modifier: String to append to the filename.
-        force_filepath: Explicit log file path.
-
-    Returns:
-        Resolved log file path.
-    """
+    """Determine the log file path."""
     if force_filepath:
         return Path(force_filepath)
 
@@ -122,19 +127,37 @@ def _resolve_log_filepath(
     return LOG_DIR / (Path(subfolder) / filename if subfolder else filename)
 
 
-# === Example usage ===
+# =============================================================================
+# Example: entry point (main.py or similar)
+# =============================================================================
 if __name__ == "__main__":
     try:
-        # Simplified single-line configuration
-        logger = configure_logger(save_to_file=True, subfolder="test", filename_modifier="app")
-        logger.info("Application started")
-        logger.warning("This is a warning")
-        logger.error("This is an error")
+        # configure_logger is called ONCE at startup — not reassigned to `logger`
+        configure_logger(save_to_file=True, subfolder="test", filename_modifier="app")
+
+        # Root-level logging (no module tag needed)
+        log = get_logger("main")
+        log.info("Application started")
+        log.warning("This is a warning")
+        log.error("This is an error")
+
     except ValueError as e:
         print(f"Logger setup failed: {e}")  # noqa: T201
 
-# === Example usage ina module that uses the logger ===
-# if __name__ == "__main__":
-#     # Example usage for testing
-#     logger = get_logger(__name__)
-#     logger.info("This is an info message")
+
+# =============================================================================
+# Example: usage inside any module
+# =============================================================================
+#
+#   from logger import get_logger
+#
+#   log = get_logger(__name__)          # tags output with the module name
+#
+#   log.info("Model training started")
+#   log.debug("Learning rate: 0.001")
+#   log.error("Training failed")
+#
+# Output (console):
+#   2025-06-01 12:00:00 | INFO     | trainer.py:42 | trainer | Model training started
+#   2025-06-01 12:00:00 | DEBUG    | trainer.py:43 | trainer | Learning rate: 0.001
+#   2025-06-01 12:00:00 | ERROR    | trainer.py:44 | trainer | Training failed
