@@ -31,7 +31,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-# Main dependencies (it will always be installed and part of the package)
 dependencies = [
     "faiss-cpu>=1.11.0",
     "fastmcp>=2.5.1",
@@ -53,8 +52,11 @@ dependencies = [
     "pydantic-settings>=2.9.1",
     "python-dotenv>=1.1.0",
     "qdrant-client>=1.14.2",
-    "unstructured[docx,pdf]>=0.17.2", # Note: it installs many dependencies: torch, cuda, etc.
+    "unstructured[docx,pdf]>=0.17.2",
 ]
+
+[project.optional-dependencies]
+optional = []
 
 [project.urls]
 Homepage = "https://github.com/angelmtenor/ai-circus"
@@ -62,25 +64,17 @@ Repository = "https://github.com/angelmtenor/ai-circus"
 Documentation = "https://angelmtenor.github.io/ai-circus"
 BugTracker = "https://github.com/angelmtenor/ai-circus/issues"
 
-# Core dependencies
-
-
-# Optional dependencies
-[project.optional-dependencies]
-optional = []
-
-# Development dependencies
 [dependency-groups]
 dev = [
     "debugpy>=1.8.14",
     "deptry>=0.23.0",
     "glances>=4.3.1",
     "jupyter>=1.1.1",
-    "nodejs>=0.1.1",       # required for pyright
     "pre-commit>=4.2.0",
     "pyinstrument>=5.0.1",
-    "pyright>=1.1.400",
+    "pyrefly>=0.53.0",        # replaces pyright
     "pytest>=8.3.5",
+    "pytest-asyncio>=1.3.0",
     "pytest-cov>=6.1.1",
     "ruff>=0.11.8",
     "twine>=6.1.0",
@@ -91,27 +85,11 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# Pyright configuration (static type checker)
-[tool.pyright]
-exclude = [
-    "**/node_modules",
-    "**/__pycache__",
-    "**/.git",
-    "**/.hg",
-    "**/.mypy_cache",
-    "**/.pytest_cache",
-    "**/.ruff_cache",
-    "**/.tox",
-    "**/.venv",
-    "**/build",
-    "**/dist",
-    "**/docs/_build",
-    "**/notebooks_extra",
-]
-typeCheckingMode = "standard" # "standard" balances strictness and practicality
-
-# Ruff configuration (linter and formatter)
+# ──────────────────────────────────────────────────────────────────────────────
+#  Ruff
+# ──────────────────────────────────────────────────────────────────────────────
 [tool.ruff]
+preview = true
 target-version = "py313"
 line-length = 120
 fix = true
@@ -147,6 +125,7 @@ select = [
     "YTT", # flake8-2020
 ]
 ignore = [
+    "ANN401",  # Dynamically typed expressions
     "B007",    # Unused loop variable
     "B008",    # Function call in argument defaults
     "C901",    # Function too complex
@@ -155,12 +134,12 @@ ignore = [
     "D205",    # Blank line between summary and description
     "D212",    # Multi-line docstring summary
     "D415",    # First line punctuation
-    "ANN401",  # Dynamically typed expressions
     "FBT001",  # Boolean flag in function
     "FBT002",  # Default Boolean flag
-    "PLR0913", # Too many arguments
     "G004",    # f-string in log
+    "PLR0913", # Too many arguments
     "S101",    # Use of assert detected
+    "S404",    # Subprocess Usage
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -175,18 +154,58 @@ convention = "google"
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
 
-[tool.deptry]
+# ──────────────────────────────────────────────────────────────────────────────
+#  Pyrefly (replaces pyright)
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.pyrefly]
+use-ignore-files = false
+project-includes = ["src"]
+project-excludes = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/*venv/**/*",
+    "**/tests",
+]
+search-path = [
+    "src",
+    ".venv/lib/python3.13/site-packages",
+]
+python-platform = "linux"
+python-version = "3.13"
+python-interpreter-path = ".venv/bin/python3"
 
+# ──────────────────────────────────────────────────────────────────────────────
+#  ty
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.ty.rules]
 
-# Pytest configuration
+[tool.ty.environment]
+python = "./.venv"
+python-version = "3.13"
+python-platform = "linux"
+root = ["."]
+extra-paths = []
+
+[tool.ty.src]
+respect-ignore-files = false
+include = ["src"]
+exclude = ["**/node_modules", "**/__pycache__", "**/*venv/**/*", "./build"]
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Pytest
+# ──────────────────────────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 minversion = "7.0"
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 addopts = [
     "--cov=src",
     "--cov-report=html",
     "--cov-report=xml",
-    "--cov-fail-under=0", # Tune this value to your needs
+    "--cov-report=json",
+    "--cov-report=term-missing",
+    "--cov-fail-under=0",
     "-ra",
     "-q",
 ]
@@ -195,7 +214,9 @@ python_files = "test_*.py tests_*.py *_test.py"
 python_classes = "*Test Test* Describe*"
 python_functions = "test_* it_* should_* scenario_*"
 
-# Coverage configuration
+# ──────────────────────────────────────────────────────────────────────────────
+#  Coverage
+# ──────────────────────────────────────────────────────────────────────────────
 [tool.coverage.report]
 skip_empty = true
 
@@ -203,7 +224,14 @@ skip_empty = true
 branch = true
 source = ["src"]
 
-# Add executable scripts
+# ──────────────────────────────────────────────────────────────────────────────
+#  Deptry
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.deptry]
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Scripts
+# ──────────────────────────────────────────────────────────────────────────────
 [project.scripts]
 ai-hello-world = "ai_circus.tools.hello_world:main"
 ai-check-api-keys = "ai_circus.tools.check_api_keys:main"

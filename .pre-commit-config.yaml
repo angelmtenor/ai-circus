@@ -1,28 +1,22 @@
 # Pre-commit settings / QA
 # Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
-# Repository: https://github.com/angelmtenor/ds-template
-
-# Instructions:
-# - Install: `pip install pre-commit`
-# - Setup: `pre-commit install`
-# - Run QA: `pre-commit run --all-files`
-# - Update hooks: `pre-commit autoupdate`
-# - Advanced QA (optional): `ruff check src --max-line-length 120` or `ruff check $(git ls-files "*.py") --max-line-length 120`
+# Update hooks: `uv run pre-commit autoupdate`
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-      - id: mixed-line-ending
       - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
       - id: check-toml
       - id: check-yaml
         exclude: ^helm_config/.*
       - id: check-json
-        exclude: ^(.vscode/settings.json|helm_config/.*)
+        exclude: (^|/)\.vscode/|^helm_config/
       - id: pretty-format-json
-        exclude: ^(.vscode/settings.json|helm_config/.*)
+        exclude: ^(.vscode/(settings|extensions)\.json|helm_config/.*)
         args: [--autofix, --no-sort-keys]
       - id: check-merge-conflict
       - id: check-case-conflict
@@ -31,27 +25,25 @@ repos:
 
   - repo: local
     hooks:
-      - id: ruff
-        name: Ruff linting
-        entry: ruff check
+      - id: ruff-check
+        name: Ruff Check
+        entry: ruff check --fix
         language: system
         types: [python]
-        args: ["--fix", "--config=pyproject.toml"]
-        exclude: \.venv/
 
       - id: ruff-format
-        name: Ruff formatting
+        name: Ruff Format
         entry: ruff format
         language: system
         types: [python]
-        args: ["--config=pyproject.toml"]
-        exclude: \.venv/
 
-      # Optional: Uncomment if you have too many warnings in fast prototyping
-      - id: pyright
-        name: Pyright type checking
-        entry: pyright
+      - id: pyrefly-check
+        name: Pyrefly (type checking)
+        entry: pyrefly check src
         language: system
-        types: [python]
-        args: ["--project=pyproject.toml"]
-        exclude: \.venv/
+        pass_filenames: false
+
+  - repo: https://github.com/checkmake/checkmake.git
+    rev: v0.3.0
+    hooks:
+      - id: checkmake

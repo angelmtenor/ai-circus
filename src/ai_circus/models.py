@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     default_llm_model: str | None = None
     openai_api_key: SecretStr | None = None
     gemini_api_key: SecretStr | None = None
+    openai_base_url: str | None = None
 
     class Config:
         """Pydantic configuration for settings."""
@@ -123,13 +124,14 @@ def get_llm(
         return ChatOpenAI(
             model=model,
             api_key=api_key_secret,
+            base_url=settings.openai_base_url,
             **chat_kwargs,
         )
 
     # Google - no reasoning/verbosity parameters
     return ChatGoogleGenerativeAI(
         model=model,
-        google_api_key=api_key_secret,
+        api_key=api_key_secret,
         **model_kwargs,
     )
 

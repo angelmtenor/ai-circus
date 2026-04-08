@@ -93,10 +93,10 @@ if ! shopt -oq posix; then
 fi
 
 # Add pipx to PATH  (optional)
-export PATH="$PATH:$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
 
 # Project setup alias
-alias setup='source setup.sh'
+[[ -f setup.sh ]] && alias setup='source setup.sh'
 
 # Custom prompt colors
 RED='\[\e[31m\]'

@@ -23,7 +23,6 @@ class Settings(BaseSettings):
 
     openai_api_key: SecretStr = SecretStr("")
     gemini_api_key: SecretStr = SecretStr("")
-    gemini_api_key: SecretStr = SecretStr("")
     tavily_api_key: SecretStr = SecretStr("")
 
     class Config:
@@ -123,7 +122,7 @@ def main() -> None:
     # Retrieve API keys
     api_keys = {
         "OpenAI": settings.openai_api_key.get_secret_value(),
-        "Google": settings.gemini_api_key.get_secret_value(),
+        "Google": settings.gemini_api_key.get_secret_value(),  # Google Discovery API uses Gemini key
         "Gemini": settings.gemini_api_key.get_secret_value(),
         "Tavily": settings.tavily_api_key.get_secret_value(),
     }
