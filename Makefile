@@ -8,7 +8,7 @@ RESET := $(shell tput sgr0 2>/dev/null)
 
 .PHONY: help all check-uv check-venv check-full-env update \
         qa build unused-packages zip spacy-models \
-        hello-world check-api-keys commit sample-assistant
+        ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant
 .PHONY: test
 .PHONY: clean
 
@@ -31,7 +31,7 @@ check-venv: check-uv ## Verify correct virtual environment is active
 	@uv lock --locked && echo "✓ venv active"
 
 check-full-env: ## Check full environment setup via check_full_env.py
-	@python check_full_env.py || { echo "❌ check_full_env.py failed."; exit 1; }
+	@uv run python check_full_env.py || { echo "❌ check_full_env.py failed."; exit 1; }
 	@echo "✓ full environment correct"
 
 update: check-venv ## Upgrade lockfile, sync deps & update pre-commit hooks
