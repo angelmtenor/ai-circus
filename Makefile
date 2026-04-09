@@ -6,7 +6,7 @@ VENV_DIR      := .venv
 CYAN  := $(shell tput setaf 6 2>/dev/null)
 RESET := $(shell tput sgr0 2>/dev/null)
 
-.PHONY: help all install check update lint test unused-packages \
+.PHONY: help all install check update qa test unused-packages \
         build zip spacy-models \
         ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant
 .PHONY: clean
@@ -36,9 +36,9 @@ update: ## Upgrade lockfile, sync deps & update pre-commit hooks
 
 # ── Dev workflow ──────────────────────────────────────────────────────────────
 
-lint: ## Run all pre-commit checks (ruff, ruff-format, etc.)
-	@uv run pre-commit run --all-files || { echo "❌ lint failed."; exit 1; }
-	@echo "✓ lint complete"
+qa: ## Run all pre-commit checks (ruff, ruff-format, etc.)
+	@uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }
+	@echo "✓ qa complete"
 
 test: ## Run test suite
 	@uv run pytest -v --tb=short --disable-warnings --maxfail=1 || { echo "❌ tests failed."; exit 1; }
@@ -48,7 +48,7 @@ unused-packages: ## Detect unused packages (deptry)
 
 # ── Build / release ───────────────────────────────────────────────────────────
 
-all: lint test build ## Run lint, tests and build
+all: qa test build ## Run qa, tests and build
 
 build: ## Build the package
 	@uv build || { echo "❌ build failed."; exit 1; }
