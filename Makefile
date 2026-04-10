@@ -6,10 +6,7 @@ VENV_DIR      := .venv
 CYAN  := $(shell tput setaf 6 2>/dev/null)
 RESET := $(shell tput sgr0 2>/dev/null)
 
-.PHONY: help setup install check update qa test unused-packages all \
-        build zip spacy-models \
-        ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic
-.PHONY: clean
+.PHONY: help setup install check update qa test unused-packages all build clean zip spacy-models generate ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -22,6 +19,7 @@ help: ## Show this help message
 setup: ## Complete setup: install dependencies, download models, and verify environment (run after cloning)
 	@echo "🚀 Starting complete setup..."
 	@uv sync --extra optional && uv run pre-commit install && uv run python -m spacy download en_core_web_sm || { echo "❌ setup failed or spaCy download failed (may require manual: make spacy-models)"; exit 1; }
+	@$(MAKE) generate
 	@uv run python check_full_env.py || { echo "❌ Environment check failed."; exit 1; }
 	@echo "✓ Complete setup finished!"
 
@@ -39,9 +37,13 @@ update: ## Upgrade lockfile, sync deps & update pre-commit hooks
 	@uv lock --upgrade            || { echo "❌ uv lock upgrade failed."; exit 1; }
 	@uv sync --extra optional     || { echo "❌ uv sync failed."; exit 1; }
 	@uv run pre-commit autoupdate || { echo "❌ pre-commit autoupdate failed."; exit 1; }
+	@$(MAKE) generate
 	@echo "✓ update complete"
 
 # ── Dev workflow ──────────────────────────────────────────────────────────────
+
+generate: ## Generate Pydantic data model from env_config.yaml
+	@uv run ai-generate-data-model
 
 qa: ## Run all pre-commit checks (ruff, ruff-format, etc.)
 	@uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }
