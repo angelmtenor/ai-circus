@@ -68,7 +68,7 @@ def test_generation_logic(temp_config: Path, tmp_path: Path) -> None:
     # Check for core components
     assert "class EnvConfig(BaseSettings):" in content
     assert "TEST_VAR_STRING: str = Field(" in content
-    assert "TEST_VAR_SECRET: Optional[SecretStr] = Field(" in content
+    assert "TEST_VAR_SECRET: SecretStr | None = Field(" in content
     assert 'env_file=".env.test"' in content
     assert '@field_validator("TEST_VAR_SECRET", mode="after")' in content
     assert 'r"^[A-Z]{3}$"' in content

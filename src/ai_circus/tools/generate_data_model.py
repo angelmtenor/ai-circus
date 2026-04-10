@@ -72,7 +72,7 @@ def generate_data_model(
         "from __future__ import annotations",
         "",
         "import re",
-        "from typing import Any, Optional",
+        "from typing import Any",
         "",
         "from pydantic import Field, SecretStr, field_validator",
         "from pydantic_settings import BaseSettings, SettingsConfigDict",
@@ -96,27 +96,31 @@ def generate_data_model(
         is_secret = var.get("secret", False)
         default = var.get("default")
 
-        type_hint = "SecretStr" if is_secret else "str"
-        if not is_mandatory:
-            type_hint = f"Optional[{type_hint}]"
+        base_type = "SecretStr" if is_secret else "str"
+        type_hint = base_type if is_mandatory else f"{base_type} | None"
 
         description = var.get("description", "").replace('"', '\\"')
 
-        field_parts = [f'description="{description}"']
-
-        # If mandatory and NO default is provided in YAML, omit default=... to force Pydantic requirement
-        if is_mandatory and default is None:
-            pass  # Pydantic will require this
-        else:
+        field_args = [f'description="{description}"']
+        if not (is_mandatory and default is None):
             if default is None:
-                field_parts.append("default=None")
+                field_args.append("default=None")
             elif isinstance(default, str):
-                field_parts.append(f'default="{default}"')
+                field_args.append(f'default="{default}"')
             else:
-                field_parts.append(f"default={default}")
+                field_args.append(f"default={default}")
 
-        line = f"    {name}: {type_hint} = Field({', '.join(field_parts)})  # noqa: E501"
-        lines.append(line)
+        # format as multi-line if total length would be long
+        line_start = f"    {name}: {type_hint} = Field("
+        args_str = ", ".join(field_args)
+        if len(line_start + args_str + ")") > 80:
+            lines.append(line_start)
+            for i, arg in enumerate(field_args):
+                comma = "," if i < len(field_args) - 1 else ""
+                lines.append(f"        {arg}{comma}")
+            lines[-1] += "\n    )"
+        else:
+            lines.append(f"{line_start}{args_str})")
 
     # Add validators
     for var in vars_list:
@@ -136,15 +140,19 @@ def generate_data_model(
                 "            return v",
                 "        val = v.get_secret_value() if hasattr(v, 'get_secret_value') else str(v)",
                 f'        if not re.match(r"{regex}", val):',
-                f'            raise ValueError("{err}")  # noqa: E501',
+                "            raise ValueError(",
+                f'                "{err}"',
+                "            )",
                 "        return v",
             ])
 
     lines.extend([
         "",
+        "",
         "EnvConfig.model_rebuild()",
         "",
         "env_config = EnvConfig()",
+        "",
         "",
         "def main() -> None:",
         '    """Display the loaded configuration (redacted)."""',
@@ -154,6 +162,7 @@ def generate_data_model(
         '        if hasattr(val, "get_secret_value"):',
         '            val = "****" + val.get_secret_value()[-4:] if val and val.get_secret_value() else "None"',
         '        print(f"{field}: {val}")  # noqa: T201',
+        "",
         "",
         'if __name__ == "__main__":',
         "    main()",
