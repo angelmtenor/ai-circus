@@ -30,8 +30,8 @@ env_variables:
     secret: true
     default: null
     validation:
-      regex: ^[a-zA-Z0-9]{32}$  # Example: 32-character API key
-      error_message: "Invalid Tavily API key format. Expected a 32-character alphanumeric string."
+      regex: ^[a-zA-Z0-9_-]{16,}$  # At least 16 characters, alphanumeric, hyphen, or underscore
+      error_message: "Invalid Tavily API key format. Expected at least 16 alphanumeric characters."
 
 # Optional global settings
 global_settings:
