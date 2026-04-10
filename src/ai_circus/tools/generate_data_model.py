@@ -4,7 +4,7 @@ generate_data_model.py
 
 Utility to generate a Pydantic Settings model from env_config.yaml.
 Automates the synchronization of environment variable definitions
-with the application's data model.
+with the application's data model and .env.example file.
 
 Author: Angel Martinez-Tenor, 2026.
 """
@@ -19,9 +19,38 @@ from loguru import logger
 
 DEFAULT_CONFIG = "env_config.yaml"
 DEFAULT_OUTPUT = "src/ai_circus/data_model.py"
+DEFAULT_ENV_EXAMPLE = ".env.example"
 
 
-def generate_data_model(config_path: str | Path, output_path: str | Path) -> None:
+def update_env_example(config: dict, output_path: str | Path) -> None:
+    """Generate or update .env.example from config."""
+    lines = []
+
+    for var in config.get("env_variables", []):
+        name = var["name"]
+        description = var.get("description", "")
+        default = var.get("default")
+
+        if description:
+            lines.append(f"# {description}")
+
+        val_str = ""
+        if default is not None:
+            val_str = str(default)
+
+        lines.append(f"{name}={val_str}")
+        lines.append("")
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines).strip() + "\n")
+    logger.info("Updated {}", output_path)
+
+
+def generate_data_model(
+    config_path: str | Path,
+    output_path: str | Path,
+    env_example_path: str | Path = DEFAULT_ENV_EXAMPLE,
+) -> None:
     """Read YAML config and write the Pydantic model file."""
     with open(config_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
@@ -63,26 +92,30 @@ def generate_data_model(config_path: str | Path, output_path: str | Path) -> Non
     vars_list = config.get("env_variables", [])
     for var in vars_list:
         name = var["name"]
-        type_hint = "str"
-        if var.get("secret"):
-            type_hint = "SecretStr"
-
-        if not var.get("mandatory"):
-            type_hint = f"Optional[{type_hint}]"
-
+        is_mandatory = var.get("mandatory", False)
+        is_secret = var.get("secret", False)
         default = var.get("default")
-        if default is None:
-            default_str = "None"
-        elif isinstance(default, str):
-            default_str = f'"{default}"'
-        else:
-            default_str = str(default)
+
+        type_hint = "SecretStr" if is_secret else "str"
+        if not is_mandatory:
+            type_hint = f"Optional[{type_hint}]"
 
         description = var.get("description", "").replace('"', '\\"')
 
-        line = f"    {name}: {type_hint} = Field("
-        line += f'default={default_str}, description="{description}"'
-        line += ")  # noqa: E501"
+        field_parts = [f'description="{description}"']
+
+        # If mandatory and NO default is provided in YAML, omit default=... to force Pydantic requirement
+        if is_mandatory and default is None:
+            pass  # Pydantic will require this
+        else:
+            if default is None:
+                field_parts.append("default=None")
+            elif isinstance(default, str):
+                field_parts.append(f'default="{default}"')
+            else:
+                field_parts.append(f"default={default}")
+
+        line = f"    {name}: {type_hint} = Field({', '.join(field_parts)})  # noqa: E501"
         lines.append(line)
 
     # Add validators
@@ -132,6 +165,7 @@ def generate_data_model(config_path: str | Path, output_path: str | Path) -> Non
         f.write("\n".join(lines) + "\n")
 
     logger.info("Generated {} from {}", output_path, config_path)
+    update_env_example(config, env_example_path)
 
 
 def main() -> None:
@@ -139,9 +173,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Generate Pydantic model from YAML.")
     parser.add_argument("--config", default=DEFAULT_CONFIG, help="Path to env_config.yaml")
     parser.add_argument("--output", default=DEFAULT_OUTPUT, help="Output path for data_model.py")
+    parser.add_argument("--env-example", default=DEFAULT_ENV_EXAMPLE, help="Output path for .env.example")
     args = parser.parse_args()
 
-    generate_data_model(args.config, args.output)
+    generate_data_model(args.config, args.output, args.env_example)
 
 
 if __name__ == "__main__":

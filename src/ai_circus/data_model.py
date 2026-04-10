@@ -25,16 +25,16 @@ class EnvConfig(BaseSettings):
         extra="ignore",
         case_sensitive=True,
     )
-    OPENAI_API_KEY: SecretStr | None = Field(
-        default=None, description="API key for accessing OpenAI services for AI-related functionalities"
+    OPENAI_API_KEY: SecretStr = Field(
+        description="API key for accessing OpenAI services for AI-related functionalities"
     )
     GEMINI_API_KEY: SecretStr | None = Field(
-        default=None, description="API key for accessing Google services (e.g., Maps, Cloud)"
+        description="API key for accessing Google services (e.g., Maps, Cloud)", default=None
     )
     TAVILY_API_KEY: SecretStr | None = Field(
-        default=None, description="API key for accessing Tavily services (e.g., data aggregation)"
+        description="API key for accessing Tavily services (e.g., data aggregation)", default=None
     )
-    LLM_LANGUAGE: str | None = Field(default="English", description="Language for the LLM responses")
+    LLM_LANGUAGE: str | None = Field(description="Language for the LLM responses", default="English")
 
     @field_validator("OPENAI_API_KEY", mode="after")
     @classmethod

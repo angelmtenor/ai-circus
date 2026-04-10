@@ -75,7 +75,8 @@ def test_generation_logic(temp_config: Path, tmp_path: Path) -> None:
 def test_generated_model_functionality(temp_config: Path, tmp_path: Path) -> None:
     """Test the behavior of the generated model by importing it dynamically."""
     output_path = tmp_path / "generated_model.py"
-    generate_data_model(temp_config, output_path)
+    env_example_path = tmp_path / ".env.example.test"
+    generate_data_model(temp_config, output_path, env_example_path)
 
     # Dynamic import of the generated file
     import importlib.util
