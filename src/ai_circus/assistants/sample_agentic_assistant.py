@@ -35,14 +35,17 @@ from ai_circus.models import settings
 
 # ---------------------------------------------------------------------------
 # Configuration
-# ---
+# ---------------------------------------------------------------------------
+
 set_tracing_disabled(True)  # silences the EU 401 spam
 set_default_openai_api("chat_completions")  # avoids Responses API hang
 
+MODEL: str = "gpt-5.4-mini"  # fast + cheap; swap for gpt-4o for best quality
+EMBEDDING_MODEL: str = "text-embedding-3-small"
+TOP_K_RETRIEVAL: int = 3
 CHUNK_SIZE: int = 2000
 CHUNK_OVERLAP: int = 50
 SAMPLE_FILE_PATH: str = "scenarios/python_development/documents/15_software_engineering_principles.md"
-MODEL: str = "gpt-5.4-mini"  # fast + cheap; swap for gpt-4o for best quality
 
 logger = configure_logger(level="DEBUG")
 
@@ -85,9 +88,9 @@ class FinalResponse(BaseModel):
 class SimpleVectorStore:
     """Lightweight in-process vector store backed by OpenAI embeddings."""
 
-    def __init__(self) -> None:
+    def __init__(self, embedding_model: str = EMBEDDING_MODEL) -> None:
         """Initialize the vector store with OpenAI client."""
-        # Use the same configuration as the rest of the codebase
+        self._embedding_model = embedding_model
         api_key = settings.api_key("openai")
         self._client = AsyncOpenAI(
             api_key=api_key.get_secret_value() if api_key else None,
@@ -100,17 +103,17 @@ class SimpleVectorStore:
     async def add_texts(self, texts: list[str], metadatas: list[dict]) -> None:
         """Add texts to the vector store with their metadata."""
         resp = await self._client.embeddings.create(
-            model="text-embedding-3-small",
+            model=self._embedding_model,
             input=texts,  # type: ignore[bad-argument-type]
         )
         self._texts = texts
         self._metadatas = metadatas
         self._embeddings = [e.embedding for e in resp.data]
 
-    async def similarity_search(self, query: str, k: int = 3) -> list[dict]:
+    async def similarity_search(self, query: str, k: int = TOP_K_RETRIEVAL) -> list[dict]:
         """Search for similar texts using cosine similarity."""
         resp = await self._client.embeddings.create(
-            model="text-embedding-3-small",
+            model=self._embedding_model,
             input=[query],  # type: ignore[bad-argument-type]
         )
         q_vec = resp.data[0].embedding
@@ -134,11 +137,15 @@ class SimpleVectorStore:
 
 
 # ---------------------------------------------------------------------------
-# Document loader (replaces DocumentExtractor)
+# Document loader
 # ---------------------------------------------------------------------------
 
 
-def load_and_chunk(file_path: str, chunk_size: int = CHUNK_SIZE, chunk_overlap: int = CHUNK_OVERLAP) -> list[dict]:
+def load_and_chunk(
+    file_path: str,
+    chunk_size: int = CHUNK_SIZE,
+    chunk_overlap: int = CHUNK_OVERLAP,
+) -> list[dict]:
     """Read a markdown/text file and split into overlapping chunks."""
     text = Path(file_path).read_text(encoding="utf-8")
     chunks: list[dict] = []
@@ -189,8 +196,6 @@ async def detect_intent(ctx: RunContextWrapper[AssistantContext], user_query: st
     Returns a JSON IntentResult with keys: intent, confidence, reasoning.
     Intent is one of: DOCUMENT_QUERY, CHIT_CHAT, OUT_OF_SCOPE, FOLLOW_UP.
     """
-    # Delegate to a lightweight structured-output call
-    # Use the same configuration as the rest of the codebase
     api_key = settings.api_key("openai")
     client = AsyncOpenAI(
         api_key=api_key.get_secret_value() if api_key else None,
@@ -221,14 +226,21 @@ async def detect_intent(ctx: RunContextWrapper[AssistantContext], user_query: st
 
 
 @function_tool
-async def retrieve_documents(ctx: RunContextWrapper[AssistantContext], query: str, k: int = 3) -> str:
+async def retrieve_documents(
+    ctx: RunContextWrapper[AssistantContext],
+    query: str,
+    k: int = TOP_K_RETRIEVAL,
+) -> str:
     """Perform semantic search over the loaded document chunks.
 
     Returns a JSON list of the top-k most relevant passages with scores.
     """
     hits = await ctx.context.vector_store.similarity_search(query, k=k)
     ctx.context.last_retrieval = hits
-    return json.dumps([{"text": h["text"][:400], "score": h["score"]} for h in hits], indent=2)
+    return json.dumps(
+        [{"text": h["text"][:400], "score": h["score"]} for h in hits],
+        indent=2,
+    )
 
 
 @function_tool
@@ -306,9 +318,23 @@ orchestrator_agent = Agent[AssistantContext](
 # ---------------------------------------------------------------------------
 
 
-async def build_assistant(file_path: str = SAMPLE_FILE_PATH) -> AssistantContext:
-    """Load documents, embed them, and return a ready AssistantContext."""
-    # Ensure OpenAI API key is set in environment for Agents SDK
+async def build_assistant(
+    file_path: str = SAMPLE_FILE_PATH,
+    chunk_size: int = CHUNK_SIZE,
+    chunk_overlap: int = CHUNK_OVERLAP,
+    embedding_model: str = EMBEDDING_MODEL,
+) -> AssistantContext:
+    """Load documents, embed them, and return a ready AssistantContext.
+
+    Args:
+        file_path: Path to the markdown/text document to load.
+        chunk_size: Character length of each chunk.
+        chunk_overlap: Overlap between consecutive chunks.
+        embedding_model: OpenAI embedding model to use.
+
+    Returns:
+        A populated AssistantContext ready for querying.
+    """
     api_key = settings.api_key("openai")
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key.get_secret_value()
@@ -317,10 +343,10 @@ async def build_assistant(file_path: str = SAMPLE_FILE_PATH) -> AssistantContext
 
     try:
         logger.info(f"Loading document: {file_path}")
-        chunks = load_and_chunk(file_path, CHUNK_SIZE, CHUNK_OVERLAP)
+        chunks = load_and_chunk(file_path, chunk_size, chunk_overlap)
         logger.info(f"Extracted {len(chunks)} chunks from {file_path}")
 
-        store = SimpleVectorStore()
+        store = SimpleVectorStore(embedding_model=embedding_model)
         await store.add_texts(
             texts=[c["page_content"] for c in chunks],
             metadatas=[c["metadata"] for c in chunks],
@@ -358,7 +384,6 @@ async def ask(
                 context=ctx,
             )
 
-        # Persist turn to history
         ctx.conversation_history.append({"role": "user", "content": query})
         ctx.conversation_history.append({"role": "assistant", "content": result.final_output})
 
@@ -378,7 +403,7 @@ async def ask(
 
 
 # ---------------------------------------------------------------------------
-# Demo workflow (mirrors run_assistant_workflow from original)
+# Demo workflow
 # ---------------------------------------------------------------------------
 
 
@@ -404,7 +429,6 @@ async def run_demo() -> None:
         for conv_idx, queries in enumerate(conversations, 1):
             logger.info(f"Starting conversation {conv_idx} with {len(queries)} queries")
             logger.info(f"Conversation {conv_idx}")
-            # Fresh history per conversation
             ctx.conversation_history = []
             ctx.last_intent = ""
             ctx.last_retrieval = []
