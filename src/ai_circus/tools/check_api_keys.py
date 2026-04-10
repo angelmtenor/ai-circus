@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import httpx
 from pydantic import SecretStr
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ai_circus.core.info import info_system
 from ai_circus.core.logger import configure_logger
@@ -21,16 +21,11 @@ logger = configure_logger(level="INFO")
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
     openai_api_key: SecretStr = SecretStr("")
     gemini_api_key: SecretStr = SecretStr("")
     tavily_api_key: SecretStr = SecretStr("")
-
-    class Config:
-        """Pydantic configuration for environment variable loading."""
-
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"
 
 
 # Load settings

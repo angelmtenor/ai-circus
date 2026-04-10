@@ -5,7 +5,7 @@ Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/
 from __future__ import annotations
 
 from pydantic import SecretStr
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ai_circus.core.info import info_system
 from ai_circus.core.logger import configure_logger
@@ -14,17 +14,12 @@ from ai_circus.core.logger import configure_logger
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
     log_level: str = "INFO"
     app_name: str = "AI Circus"
     openai_api_key: SecretStr = SecretStr("")
     gemini_api_key: SecretStr = SecretStr("")
-
-    class Config:
-        """Pydantic configuration for environment variable loading."""
-
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"
 
 
 # Load settings
