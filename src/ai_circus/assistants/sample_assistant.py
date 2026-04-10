@@ -16,10 +16,12 @@ from ai_circus.assistants.intent_detector_graph import GraphState, build_graph
 from ai_circus.assistants.retriever import Retriever
 from ai_circus.core.logger import configure_logger
 
-# Configuration constants
-CHUNK_SIZE: int = 5000
-CHUNK_OVERLAP: int = 100
-SAMPLE_FILE_PATH: str = "scenarios/python_development/documents/15_software_engineering_principles.docx"
+# Configuration constants - OPTIMIZED FOR SPEED
+CHUNK_SIZE: int = 2000  # Reduced from 5000 for faster processing
+CHUNK_OVERLAP: int = 50  # Reduced from 100 for faster processing
+SAMPLE_FILE_PATH: str = "scenarios/python_development/documents/15_software_engineering_principles.md"
+# Note: Ensure the above file exists before running this module
+# This is typically present when cloning the repository with scenario documentation
 
 logger = configure_logger(level="DEBUG")
 
@@ -75,7 +77,8 @@ def initialize_document_retriever(chunks: list[DocumentChunk]) -> Retriever:
         ValueError: If retriever initialization fails.
     """
     try:
-        retriever = Retriever()
+        # Use lighter model for faster performance in sample assistant
+        retriever = Retriever(model_choice="openai", default_k=2)  # Reduced from 4 to 2 for faster retrieval
         retriever.add_texts(
             texts=[chunk["page_content"] for chunk in chunks],
             metadatas=[chunk["metadata"] for chunk in chunks],
@@ -161,22 +164,11 @@ def run_assistant_workflow() -> None:
         assistant_graph = build_graph(retriever)
         logger.info("Assistant graph built successfully")
 
-        # Define test conversations
+        # Define test conversations - REDUCED FOR FASTER DEMO
         test_conversations = [
             [
                 "What is the DRY principle in software engineering?",
-                "How does KISS complement DRY?",
                 "Give an example of violating DRY.",
-            ],
-            [
-                "Explain the SOLID principles.",
-                "How does the Single Responsibility Principle improve code?",
-                "What's an example of a class violating SOLID?",
-            ],
-            [
-                "What does the Law of Demeter mean?",
-                "I love writing clean code!",
-                "What's the weather like today?",
             ],
         ]
 
