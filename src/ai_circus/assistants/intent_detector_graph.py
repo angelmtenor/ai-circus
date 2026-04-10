@@ -99,7 +99,7 @@ def load_prompt_template(node: str) -> str:
             logger.error(f"Empty prompt generated for node: {node}")
             raise ValueError(f"Empty prompt for node: {node}")
 
-        logger.debug(f"Loaded prompt for {node}:\n\n{prompt}")
+        # logger.debug(f"Loaded prompt for {node}:\n\n{prompt}")
         return prompt
     except FileNotFoundError as e:
         logger.error("Prompt YAML file not found")
@@ -179,7 +179,7 @@ def intent_detector_node(state: GraphState) -> GraphState:
     Returns:
         GraphState: Updated state with intent output.
     """
-    llm = get_llm()
+    llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 500})  # Faster, more deterministic responses
     prompt = INTENT_PROMPT.format(conversation_history=json.dumps(state.history, indent=2), user_input=state.user_input)
     response = llm.invoke(prompt)
     intent_output = process_llm_response(str(response.content))
@@ -200,7 +200,7 @@ def non_retriever_response_node(state: GraphState) -> GraphState:
     Returns:
         GraphState: Updated state with response output and updated history.
     """
-    llm = get_llm()
+    llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 1000})  # Faster, more deterministic responses
     prompt = NON_RETRIEVER_PROMPT.format(
         conversation_history=json.dumps(state.history, indent=2), user_input=state.user_input
     )
@@ -246,7 +246,7 @@ def post_retriever_response_node(state: GraphState) -> GraphState:
     Returns:
         GraphState: Updated state with response output and updated history.
     """
-    llm = get_llm()
+    llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 1500})  # Faster, more deterministic responses
     prompt = POST_RETRIEVER_PROMPT.format(
         conversation_history=json.dumps(state.history, indent=2),
         user_input=state.user_input,
