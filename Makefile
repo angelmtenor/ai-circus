@@ -8,7 +8,7 @@ RESET := $(shell tput sgr0 2>/dev/null)
 
 .PHONY: help setup install check update qa test unused-packages all \
         build zip spacy-models \
-        ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant
+        ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic
 .PHONY: clean
 
 # ── Help ──────────────────────────────────────────────────────────────────────
@@ -90,3 +90,6 @@ ai-commit: ## Generate commit messages
 
 ai-sample-assistant: ## Run sample assistant
 	@KMP_DUPLICATE_LIB_OK=TRUE uv run ai-sample-assistant
+
+ai-sample-agentic: ## Run sample agentic assistant
+	@KMP_DUPLICATE_LIB_OK=TRUE uv run ai-sample-agentic
