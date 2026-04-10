@@ -34,6 +34,7 @@ class EnvConfig(BaseSettings):
     TAVILY_API_KEY: SecretStr | None = Field(
         default=None, description="API key for accessing Tavily services (e.g., data aggregation)"
     )
+    LLM_LANGUAGE: str | None = Field(default="English", description="Language for the LLM responses")
 
     @field_validator("OPENAI_API_KEY", mode="after")
     @classmethod

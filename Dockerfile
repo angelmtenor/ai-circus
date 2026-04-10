@@ -1,6 +1,11 @@
-FROM python:3.13-alpine
-COPY --from=ghcr.io/astral-sh/uv:0.1.0 /uv /uvx /bin/
+FROM python:3.13-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 COPY . /app
+
+# Install dependencies
 RUN uv sync --frozen --no-cache
-CMD ["uv", "run", "python", "-m", "ai_circus.tools.hello_world"]
+
+# Entry point using the new app.py
+CMD ["uv", "run", "python", "-m", "ai_circus.app"]

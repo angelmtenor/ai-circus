@@ -33,6 +33,13 @@ env_variables:
       regex: ^[a-zA-Z0-9_-]{16,}$  # At least 16 characters, alphanumeric, hyphen, or underscore
       error_message: "Invalid Tavily API key format. Expected at least 16 alphanumeric characters."
 
+  - name: LLM_LANGUAGE
+    description: Language for the LLM responses
+    type: string
+    mandatory: false
+    secret: false
+    default: "English"
+
 # Optional global settings
 global_settings:
   env_file: ".env"  # Default location for environment variable file

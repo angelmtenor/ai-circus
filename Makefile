@@ -6,7 +6,7 @@ VENV_DIR      := .venv
 CYAN  := $(shell tput setaf 6 2>/dev/null)
 RESET := $(shell tput sgr0 2>/dev/null)
 
-.PHONY: help setup install check update qa test unused-packages all build clean zip spacy-models generate ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model
+.PHONY: help setup install check update qa test unused-packages all build clean zip spacy-models generate run ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model ai-app
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -81,6 +81,9 @@ spacy-models: ## Download required spaCy models
 
 # ── AI tools ──────────────────────────────────────────────────────────────────
 
+run: ## Run the main application (app.py)
+	@uv run ai-app
+
 ai-hello-world: ## Run hello world tool
 	@uv run ai-hello-world
 
@@ -95,3 +98,6 @@ ai-sample-assistant: ## Run sample assistant
 
 ai-sample-agentic: ## Run sample agentic assistant
 	@KMP_DUPLICATE_LIB_OK=TRUE uv run ai-sample-agentic
+
+ai-app: ## Run the main application (alias for 'make run')
+	@$(MAKE) run
