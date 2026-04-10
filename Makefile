@@ -6,7 +6,7 @@ VENV_DIR      := .venv
 CYAN  := $(shell tput setaf 6 2>/dev/null)
 RESET := $(shell tput sgr0 2>/dev/null)
 
-.PHONY: help all install check update qa test unused-packages \
+.PHONY: help setup install check update qa test unused-packages all \
         build zip spacy-models \
         ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant
 .PHONY: clean
@@ -19,9 +19,16 @@ help: ## Show this help message
 
 # ── Bootstrap ─────────────────────────────────────────────────────────────────
 
-install: ## Sync deps and install pre-commit hooks (run after cloning)
+setup: ## Complete setup: install dependencies, download models, and verify environment (run after cloning)
+	@echo "🚀 Starting complete setup..."
+	@uv sync --extra optional && uv run pre-commit install && uv run python -m spacy download en_core_web_sm || { echo "❌ setup failed or spaCy download failed (may require manual: make spacy-models)"; exit 1; }
+	@uv run python check_full_env.py || { echo "❌ Environment check failed."; exit 1; }
+	@echo "✓ Complete setup finished!"
+
+install: ## Sync deps, install pre-commit hooks, and download spaCy models (run after cloning)
 	@uv sync --extra optional     || { echo "❌ uv sync failed."; exit 1; }
 	@uv run pre-commit install    || { echo "❌ pre-commit install failed."; exit 1; }
+	@uv run python -m spacy download en_core_web_sm || { echo "⚠️  spaCy model download failed (may require manual: make spacy-models)"; }
 	@echo "✓ install complete"
 
 check: ## Verify full environment (venv, uv, packages, env vars)
@@ -82,4 +89,4 @@ ai-commit: ## Generate commit messages
 	@uv run ai-commit
 
 ai-sample-assistant: ## Run sample assistant
-	@uv run ai-sample-assistant
+	@KMP_DUPLICATE_LIB_OK=TRUE uv run ai-sample-assistant
