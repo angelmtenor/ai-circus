@@ -58,9 +58,11 @@ def temp_config(tmp_path: Path) -> Path:
 def test_generation_logic(temp_config: Path, tmp_path: Path) -> None:
     """Test that the generator produces valid Python code with expected patterns."""
     output_path = tmp_path / "generated_model.py"
-    generate_data_model(temp_config, output_path)
+    env_example_path = tmp_path / ".env.example.test"
+    generate_data_model(temp_config, output_path, env_example_path)
 
     assert output_path.exists()
+    assert env_example_path.exists()
     content = output_path.read_text()
 
     # Check for core components
