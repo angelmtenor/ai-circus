@@ -25,16 +25,16 @@ from langchain_core.embeddings import Embeddings
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from pydantic import SecretStr
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Module-level defaults
 DEFAULT_LLM_PROVIDER: Literal["openai", "google"] = "openai"
 
-# Current accurate defaults (December 2025)
-DEFAULT_LLM_MODEL_OPENAI: str = "gpt-5.2-chat-latest"  # Low-latency / Instant variant
-DEFAULT_LLM_MODEL_GOOGLE: str = "gemini-3-flash"  # Fastest Gemini 3 variant
-DEFAULT_EMBEDDING_MODEL_OPENAI: str = "text-embedding-3-large"
-DEFAULT_EMBEDDING_MODEL_GOOGLE: str = "models/embedding-001"
+# Current accurate defaults
+DEFAULT_LLM_MODEL_OPENAI: str = "gpt-5-mini"
+DEFAULT_LLM_MODEL_GOOGLE: str = "gemini-3-flash"
+DEFAULT_EMBEDDING_MODEL_OPENAI: str = "text-embedding-3-small"
+DEFAULT_EMBEDDING_MODEL_GOOGLE: str = "models/text-embedding-004"
 
 # Reasoning effort default (explicit module constant as requested)
 DEFAULT_REASONING_EFFORT: Literal["low", "medium", "high"] | None = None
@@ -46,18 +46,13 @@ DEFAULT_VERBOSITY: Literal["low", "medium", "high"] = "low"
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
     default_llm_provider: Literal["openai", "google"] = DEFAULT_LLM_PROVIDER
     default_llm_model: str | None = None
     openai_api_key: SecretStr | None = None
     gemini_api_key: SecretStr | None = None
     openai_base_url: str | None = None
-
-    class Config:
-        """Pydantic configuration for settings."""
-
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"
 
     @property
     def llm_model(self) -> str:
