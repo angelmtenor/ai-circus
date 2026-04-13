@@ -10,8 +10,8 @@ env_variables:
     secret: true
     default: null
     validation:
-      regex: ^[a-zA-Z0-9-]{20,}$  # Basic pattern for API key (e.g., min 20 chars, alphanumeric)
-      error_message: "Invalid OpenAI API key format. Expected a string of at least 20 alphanumeric characters."
+      regex: ^sk-[A-Za-z0-9_-]{20,}$  # Basic pattern for OpenAI API key (starts with sk- and may include alphanumeric, hyphen, underscore)
+      error_message: "Invalid OpenAI API key format. Expected an OpenAI key starting with sk- and at least 20 characters."
 
   - name: GEMINI_API_KEY
     description: API key for accessing Google services (e.g., Maps, Cloud)
@@ -33,10 +33,10 @@ env_variables:
       regex: ^[a-zA-Z0-9_-]{16,}$  # At least 16 characters, alphanumeric, hyphen, or underscore
       error_message: "Invalid Tavily API key format. Expected at least 16 alphanumeric characters."
 
-  - name: LLM_LANGUAGE
+  - name: LLM_LANGUAGES
     description: Language for the LLM responses
     type: string
-    mandatory: false
+    mandatory: true
     secret: false
     default: "English"
 

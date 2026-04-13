@@ -24,7 +24,7 @@ def main() -> None:
         # Import env_config here to trigger validation at startup
         from ai_circus.data_model import EnvConfig, env_config
     except ValidationError as e:
-        logger.error("Configuration error: Mandatory environment variable(s) missing or invalid.")
+        logger.error("Configuration error: Mandatory environment variable(s) missing or invalid:")
         for error in e.errors():
             logger.error("  {}: {}", " -> ".join(str(loc) for loc in error["loc"]), error["msg"])
         sys.exit(1)
@@ -41,7 +41,7 @@ def main() -> None:
             val = "****" + secret_val[-4:] if secret_val else "None"
         logger.info("{}: {}", field, val)
 
-    language = env_config.LLM_LANGUAGE or "English"
+    language = env_config.LLM_LANGUAGES or "English"
     logger.info("Starting Hello World LLM call in {}", language)
 
     try:

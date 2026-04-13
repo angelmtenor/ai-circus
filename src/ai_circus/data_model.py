@@ -34,7 +34,7 @@ class EnvConfig(BaseSettings):
     TAVILY_API_KEY: SecretStr | None = Field(
         description="API key for accessing Tavily services (e.g., data aggregation)", default=None
     )
-    LLM_LANGUAGE: str | None = Field(description="Language for the LLM responses", default="English")
+    LLM_LANGUAGES: str = Field(description="Language for the LLM responses", default="English")
 
     @field_validator("OPENAI_API_KEY", mode="after")
     @classmethod
@@ -43,8 +43,10 @@ class EnvConfig(BaseSettings):
         if v is None:
             return v
         val = v.get_secret_value() if hasattr(v, "get_secret_value") else str(v)
-        if not re.match(r"^[a-zA-Z0-9-]{20,}$", val):
-            raise ValueError("Invalid OpenAI API key format. Expected a string of at least 20 alphanumeric characters.")
+        if not re.match(r"^sk-[A-Za-z0-9_-]{20,}$", val):
+            raise ValueError(
+                "Invalid OpenAI API key format. Expected an OpenAI key starting with sk- and at least 20 characters."
+            )
         return v
 
     @field_validator("GEMINI_API_KEY", mode="after")
