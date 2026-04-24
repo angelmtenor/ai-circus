@@ -4,11 +4,13 @@ Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ai_circus.core.info import info_system
-from ai_circus.core.logger import configure_logger
+from ai_circus.core.logger import configure_logger, get_logger
 
 
 class Settings(BaseSettings):
@@ -22,11 +24,13 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr = SecretStr("")
 
 
-# Load settings
-settings = Settings()
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Return cached tool settings."""
+    return Settings()
 
-# Initialize logger
-logger = configure_logger(level=settings.log_level)
+
+logger = get_logger(__name__)
 
 
 class SimpleClass:
@@ -43,6 +47,8 @@ class SimpleClass:
 
 def main() -> None:
     """Main function to demonstrate the functionality of the module."""
+    settings = get_settings()
+    configure_logger(level=settings.log_level)
     info_system()
 
     simple = SimpleClass(settings.app_name)

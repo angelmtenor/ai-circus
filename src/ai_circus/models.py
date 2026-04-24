@@ -19,6 +19,7 @@ Date: 2025
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Literal
 
 from langchain_core.embeddings import Embeddings
@@ -68,7 +69,10 @@ class Settings(BaseSettings):
         return self.gemini_api_key
 
 
-settings = Settings()
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Return cached model settings loaded from the environment."""
+    return Settings()
 
 
 def get_llm(
@@ -97,6 +101,7 @@ def get_llm(
     model_kwargs
         Additional kwargs passed directly to the LangChain client.
     """
+    settings = get_settings()
     provider = provider or settings.default_llm_provider
     key = settings.api_key(provider)
     model_kwargs = model_kwargs or {}
@@ -137,6 +142,7 @@ def get_embeddings(
     model: str | None = None,
 ) -> Embeddings:
     """Return an embedding model."""
+    settings = get_settings()
     provider = provider or settings.default_llm_provider
     key = settings.api_key(provider)
     api_key_secret = SecretStr(key.get_secret_value()) if key else None

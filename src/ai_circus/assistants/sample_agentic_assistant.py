@@ -30,15 +30,12 @@ from agents import (
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
-from ai_circus.core.logger import configure_logger
-from ai_circus.models import settings
+from ai_circus.core.logger import configure_logger, get_logger
+from ai_circus.models import get_settings
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-
-set_tracing_disabled(True)  # silences the EU 401 spam
-set_default_openai_api("chat_completions")  # avoids Responses API hang
 
 MODEL: str = "gpt-5.4-mini"  # fast + cheap; swap for gpt-4o for best quality
 EMBEDDING_MODEL: str = "text-embedding-3-small"
@@ -47,7 +44,13 @@ CHUNK_SIZE: int = 2000
 CHUNK_OVERLAP: int = 50
 SAMPLE_FILE_PATH: str = "scenarios/python_development/documents/15_software_engineering_principles.md"
 
-logger = configure_logger(level="DEBUG")
+logger = get_logger(__name__)
+
+
+def configure_agents_runtime() -> None:
+    """Configure the Agents SDK runtime for local execution."""
+    set_tracing_disabled(True)
+    set_default_openai_api("chat_completions")
 
 
 # ---------------------------------------------------------------------------
@@ -90,6 +93,7 @@ class SimpleVectorStore:
 
     def __init__(self, embedding_model: str = EMBEDDING_MODEL) -> None:
         """Initialize the vector store with OpenAI client."""
+        settings = get_settings()
         self._embedding_model = embedding_model
         api_key = settings.api_key("openai")
         self._client = AsyncOpenAI(
@@ -196,6 +200,7 @@ async def detect_intent(ctx: RunContextWrapper[AssistantContext], user_query: st
     Returns a JSON IntentResult with keys: intent, confidence, reasoning.
     Intent is one of: DOCUMENT_QUERY, CHIT_CHAT, OUT_OF_SCOPE, FOLLOW_UP.
     """
+    settings = get_settings()
     api_key = settings.api_key("openai")
     client = AsyncOpenAI(
         api_key=api_key.get_secret_value() if api_key else None,
@@ -335,6 +340,8 @@ async def build_assistant(
     Returns:
         A populated AssistantContext ready for querying.
     """
+    configure_agents_runtime()
+    settings = get_settings()
     api_key = settings.api_key("openai")
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key.get_secret_value()
@@ -361,20 +368,18 @@ async def build_assistant(
 async def ask(
     ctx: AssistantContext,
     query: str,
-    *,
-    verbose: bool = False,
 ) -> FinalResponse:
     """Run a single query through the agentic pipeline.
 
     Args:
         ctx: The shared assistant context (holds vector store + history).
         query: The user's natural-language question.
-        verbose: If True, stream agent step events to stdout.
 
     Returns:
         FinalResponse with response text, intent, sources, and confidence.
     """
     try:
+        configure_agents_runtime()
         logger.debug(f"Processing query: {query[:50]}...")
 
         with trace("document-assistant"):
@@ -455,6 +460,8 @@ async def run_demo() -> None:
 
 def main() -> None:
     """Main entry point for the agentic assistant demo."""
+    configure_logger(level="DEBUG")
+    configure_agents_runtime()
     logger.info("Starting agentic assistant workflow")
     try:
         asyncio.run(run_demo())
