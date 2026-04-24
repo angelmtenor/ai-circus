@@ -5,6 +5,9 @@ Author: Angel Martinez-Tenor, 2025.
 
 from __future__ import annotations
 
+import pytest
+
+import ai_circus.models as models
 from ai_circus.models import (
     DEFAULT_EMBEDDING_MODEL_GOOGLE,
     DEFAULT_EMBEDDING_MODEL_OPENAI,
@@ -12,6 +15,9 @@ from ai_circus.models import (
     DEFAULT_LLM_MODEL_OPENAI,
     DEFAULT_LLM_PROVIDER,
     Settings,
+    get_embeddings,
+    get_llm,
+    get_settings,
 )
 
 
@@ -59,3 +65,49 @@ class TestSettings:
         """Test that llm_model property returns custom model when set."""
         settings = Settings(default_llm_model="custom-model")
         assert settings.llm_model == "custom-model"
+
+    def test_get_settings_is_cached(self) -> None:
+        """Test that get_settings caches the loaded settings instance."""
+        get_settings.cache_clear()
+        first = get_settings()
+        second = get_settings()
+        assert first is second
+
+    def test_get_llm_uses_openai_settings(self, monkeypatch: object) -> None:
+        """Test OpenAI LLM initialization without relying on external services."""
+        captured: dict[str, object] = {}
+
+        class FakeChatOpenAI:
+            def __init__(self, **kwargs: object) -> None:
+                captured.update(kwargs)
+
+        monkeypatch.setattr(models, "ChatOpenAI", FakeChatOpenAI)
+
+        llm = get_llm(
+            provider="openai",
+            model="custom-openai-model",
+            model_kwargs={"temperature": 0.1},
+            reasoning_effort="low",
+            verbosity="medium",
+        )
+
+        assert isinstance(llm, FakeChatOpenAI)
+        assert captured["model"] == "custom-openai-model"
+        assert captured["temperature"] == pytest.approx(0.1)
+        assert captured["reasoning_effort"] == "low"
+        assert captured["verbosity"] == "medium"
+
+    def test_get_embeddings_uses_google_provider(self, monkeypatch: object) -> None:
+        """Test Google embeddings initialization without calling the provider."""
+        captured: dict[str, object] = {}
+
+        class FakeGoogleEmbeddings:
+            def __init__(self, **kwargs: object) -> None:
+                captured.update(kwargs)
+
+        monkeypatch.setattr(models, "GoogleGenerativeAIEmbeddings", FakeGoogleEmbeddings)
+
+        embeddings = get_embeddings(provider="google", model="custom-google-embedding")
+
+        assert isinstance(embeddings, FakeGoogleEmbeddings)
+        assert captured == {"model": "custom-google-embedding", "google_api_key": None}
