@@ -10,6 +10,7 @@ Author: Angel Martinez-Tenor, 2026.
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from typing import Any
 
 from pydantic import Field, SecretStr, field_validator
@@ -76,11 +77,16 @@ class EnvConfig(BaseSettings):
 
 EnvConfig.model_rebuild()
 
-env_config = EnvConfig()
+
+@lru_cache(maxsize=1)
+def get_env_config() -> EnvConfig:
+    """Return the validated environment configuration."""
+    return EnvConfig()
 
 
 def main() -> None:
     """Display the loaded configuration (redacted)."""
+    env_config = get_env_config()
     print("--- Loaded Configuration ---")  # noqa: T201
     for field in EnvConfig.model_fields:
         val = getattr(env_config, field)

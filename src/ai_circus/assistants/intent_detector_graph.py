@@ -8,6 +8,7 @@ Note: This script expects a `prompts.yaml` file in `ai_circus.assistants`
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from importlib import resources
 from typing import Any, Literal
 
@@ -18,10 +19,10 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel
 
 from ai_circus.assistants.retriever import Retriever
-from ai_circus.core.logger import configure_logger
+from ai_circus.core.logger import get_logger
 from ai_circus.models import get_llm
 
-logger = configure_logger(level="DEBUG")
+logger = get_logger(__name__)
 
 
 def load_prompt_template(node: str) -> str:
@@ -112,10 +113,10 @@ def load_prompt_template(node: str) -> str:
         raise ValueError(f"Failed to load prompts.yaml: {e}") from e
 
 
-# Prompt Templates
-INTENT_PROMPT = ChatPromptTemplate.from_template(load_prompt_template("intent_detection"))
-NON_RETRIEVER_PROMPT = ChatPromptTemplate.from_template(load_prompt_template("non_retriever_response"))
-POST_RETRIEVER_PROMPT = ChatPromptTemplate.from_template(load_prompt_template("post_retriever_response"))
+@lru_cache(maxsize=3)
+def get_prompt_template(node: str) -> ChatPromptTemplate:
+    """Return a cached chat prompt template for the requested node."""
+    return ChatPromptTemplate.from_template(load_prompt_template(node))
 
 
 class GraphState(BaseModel):
@@ -180,7 +181,10 @@ def intent_detector_node(state: GraphState) -> GraphState:
         GraphState: Updated state with intent output.
     """
     llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 500})  # Faster, more deterministic responses
-    prompt = INTENT_PROMPT.format(conversation_history=json.dumps(state.history, indent=2), user_input=state.user_input)
+    prompt = get_prompt_template("intent_detection").format(
+        conversation_history=json.dumps(state.history, indent=2),
+        user_input=state.user_input,
+    )
     response = llm.invoke(prompt)
     intent_output = process_llm_response(str(response.content))
     validate_output(intent_output, {"intent", "reformulated_question", "new_topic"}, "intent_detector")
@@ -201,7 +205,7 @@ def non_retriever_response_node(state: GraphState) -> GraphState:
         GraphState: Updated state with response output and updated history.
     """
     llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 1000})  # Faster, more deterministic responses
-    prompt = NON_RETRIEVER_PROMPT.format(
+    prompt = get_prompt_template("non_retriever_response").format(
         conversation_history=json.dumps(state.history, indent=2), user_input=state.user_input
     )
     response = llm.invoke(prompt)
@@ -228,7 +232,7 @@ def retriever_node(state: GraphState, retriever: Retriever) -> GraphState:
     if state.intent_output.get("intent") == "retrieve":
         try:
             reformulated_question = state.intent_output.get("reformulated_question", "")
-            docs = retriever._get_relevant_documents(reformulated_question)  # pyright: ignore[reportAttributeAccessIssue]
+            docs = retriever.get_relevant_documents(reformulated_question)
             state.retrieved_documents = [doc.page_content for doc in docs]
             logger.debug(f"Retrieved {len(docs)} documents for query: {reformulated_question}")
         except Exception as e:
@@ -247,7 +251,7 @@ def post_retriever_response_node(state: GraphState) -> GraphState:
         GraphState: Updated state with response output and updated history.
     """
     llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 1500})  # Faster, more deterministic responses
-    prompt = POST_RETRIEVER_PROMPT.format(
+    prompt = get_prompt_template("post_retriever_response").format(
         conversation_history=json.dumps(state.history, indent=2),
         user_input=state.user_input,
         retrieved_documents=(

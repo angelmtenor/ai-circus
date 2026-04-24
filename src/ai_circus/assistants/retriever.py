@@ -12,10 +12,10 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
-from ai_circus.core.logger import configure_logger
+from ai_circus.core.logger import get_logger
 from ai_circus.models import get_embeddings
 
-logger = configure_logger(level="DEBUG")
+logger = get_logger(__name__)
 
 
 class Retriever(BaseRetriever):
@@ -130,6 +130,10 @@ class Retriever(BaseRetriever):
         else:
             return self.vectorstore.as_retriever(search_kwargs={"k": k}).invoke(query)
 
+    def get_relevant_documents(self, query: str) -> list[Document]:
+        """Return relevant documents using the retriever's default configuration."""
+        return self.retrieve(query, k=self.default_k)
+
     def _get_relevant_documents(self, query: str, *, run_manager: object | None = None) -> list[Document]:
         """
         Implement abstract retrieval method required by BaseRetriever.
@@ -141,7 +145,7 @@ class Retriever(BaseRetriever):
         Returns:
             list[Document]: List of relevant documents.
         """
-        return self.retrieve(query, k=self.default_k)
+        return self.get_relevant_documents(query)
 
 
 if __name__ == "__main__":

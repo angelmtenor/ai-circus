@@ -15,14 +15,19 @@ import sys
 
 from pydantic import ValidationError
 
-from ai_circus.core.logger import logger
+from ai_circus.core.logger import configure_logger, get_logger
+
+logger = get_logger(__name__)
 
 
 def main() -> None:
     """Main application entry point."""
+    configure_logger()
+
     try:
-        # Import env_config here to trigger validation at startup
-        from ai_circus.data_model import EnvConfig, env_config
+        from ai_circus.data_model import EnvConfig, get_env_config
+
+        env_config = get_env_config()
     except ValidationError as e:
         logger.error("Configuration error: Mandatory environment variable(s) missing or invalid:")
         for error in e.errors():

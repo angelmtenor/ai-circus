@@ -6,16 +6,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import lru_cache
 
 import httpx
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ai_circus.core.info import info_system
-from ai_circus.core.logger import configure_logger
+from ai_circus.core.logger import configure_logger, get_logger
 
-# Initialize logger
-logger = configure_logger(level="INFO")
+logger = get_logger(__name__)
 
 
 class Settings(BaseSettings):
@@ -28,8 +28,10 @@ class Settings(BaseSettings):
     tavily_api_key: SecretStr = SecretStr("")
 
 
-# Load settings
-settings = Settings()
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Return cached API settings."""
+    return Settings()
 
 
 @dataclass
@@ -40,8 +42,29 @@ class APIConfig:
     url: str | Callable[[str], str]
     method: str = "GET"
     headers: dict[str, str] | Callable[[str], dict[str, str]] | None = None
-    json: dict | Callable[[str], dict] | None = None
-    params: dict | Callable[[str], dict] | None = None
+    json: dict[str, str] | Callable[[str], dict[str, str]] | None = None
+    params: dict[str, str] | Callable[[str], dict[str, str]] | None = None
+
+
+def resolve_api_config(config: APIConfig, api_key: str) -> APIConfig:
+    """Resolve dynamic APIConfig callables without mutating the source config."""
+    return APIConfig(
+        name=config.name,
+        url=config.url(api_key) if callable(config.url) else config.url,
+        method=config.method,
+        headers=config.headers(api_key) if callable(config.headers) else config.headers,
+        json=config.json(api_key) if callable(config.json) else config.json,
+        params=config.params(api_key) if callable(config.params) else config.params,
+    )
+
+
+def get_preview_key(config_name: str) -> str:
+    """Return the expected top-level preview key for an API response."""
+    if config_name == "OpenAI":
+        return "data"
+    if config_name == "Google":
+        return "items"
+    return "results"
 
 
 class APIClient:
@@ -86,8 +109,10 @@ class APIClient:
 
 def main() -> None:
     """Main function to execute API data fetching."""
+    configure_logger(level="INFO")
     logger.info("Starting the script...")
     info_system()
+    settings = get_settings()
 
     # API configurations
     api_configs = [
@@ -134,16 +159,10 @@ def main() -> None:
             checklist.append(f"[ ] {config.name}: missing API key (skipped)")
             continue
         logger.info(f"Fetching data from {config.name} API...")
-        # Dynamically resolve headers, json, or params if they're callable
-        config.headers = config.headers(api_key) if callable(config.headers) else config.headers
-        config.json = config.json(api_key) if callable(config.json) else config.json
-        config.params = config.params(api_key) if callable(config.params) else config.params
-        config.url = config.url(api_key) if callable(config.url) else config.url
-
-        data = client.fetch_data(config)
+        data = client.fetch_data(resolve_api_config(config, api_key))
         if data:
             if isinstance(data, dict):
-                key = "data" if config.name == "OpenAI" else "items" if config.name == "Google" else "results"
+                key = get_preview_key(config.name)
                 sample = data.get(key, [])
                 try:
                     preview = sample[:1]

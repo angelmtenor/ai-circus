@@ -14,7 +14,7 @@ from langgraph.graph.state import CompiledStateGraph
 from ai_circus.assistants.document_extractor import DocumentExtractor
 from ai_circus.assistants.intent_detector_graph import GraphState, build_graph
 from ai_circus.assistants.retriever import Retriever
-from ai_circus.core.logger import configure_logger
+from ai_circus.core.logger import configure_logger, get_logger
 
 # Configuration constants - OPTIMIZED FOR SPEED
 CHUNK_SIZE: int = 2000  # Reduced from 5000 for faster processing
@@ -23,7 +23,7 @@ SAMPLE_FILE_PATH: str = "scenarios/python_development/documents/15_software_engi
 # Note: Ensure the above file exists before running this module
 # This is typically present when cloning the repository with scenario documentation
 
-logger = configure_logger(level="DEBUG")
+logger = get_logger(__name__)
 
 
 class DocumentChunk(TypedDict):
@@ -210,6 +210,7 @@ def run_assistant_workflow() -> None:
 
 def main() -> None:
     """Main function to run the assistant workflow."""
+    configure_logger(level="DEBUG")
     run_assistant_workflow()
 
 

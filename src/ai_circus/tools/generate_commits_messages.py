@@ -21,12 +21,12 @@ from typing import Any
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from ai_circus.core.logger import configure_logger
+from ai_circus.core.logger import get_logger
 from ai_circus.models import get_llm
 
 EXCLUDED_PATTERNS = [r"\.ipynb$", r"\.lock$", r"\.json$", r"\.log$", r"^temp_output/"]
 
-logger = configure_logger(level="INFO")
+logger = get_logger(__name__)
 
 
 def read_styleguide() -> str:
