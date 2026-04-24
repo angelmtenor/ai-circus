@@ -204,5 +204,20 @@
         "virtualenv",
         "xclip",
         "zoneinfo"
-    ]
+    ],
+    "chat.tools.terminal.autoApprove": {
+        "printf": true,
+        "/^git add src/ai_circus/models\\.py src/ai_circus/assistants/sample_agentic_assistant\\.py src/ai_circus/tools/hello_world\\.py && git commit -m \"refactor\\(config\\): Cache settings accessors\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git add tests/test_api_client\\.py tests/test_models\\.py && git commit -m \"test: Update tests for settings and API client\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git add tests/test_app\\.py tests/test_data_model\\.py tests/test_intent_detector_graph\\.py tests/test_sample_agentic_assistant\\.py tests/test_sample_assistant\\.py && git commit -m \"test: Add new assistant and data tests\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }
