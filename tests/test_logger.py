@@ -1,6 +1,6 @@
 """Tests for the logger module.
 
-Author: Angel Martinez-Tenor, 2025.
+Author: Angel Martinez-Tenor, 2026.
 """
 
 from __future__ import annotations

@@ -12,9 +12,19 @@ Main components:
 
 from __future__ import annotations
 
+from ai_circus.assistants.document_extractor import DocumentExtractor
+from ai_circus.assistants.retriever import Retriever
+from ai_circus.core.logger import get_logger
 from ai_circus.data_model import get_env_config
 from ai_circus.models import get_embeddings, get_llm
 
 __version__ = "0.1.1"
 __author__ = "Angel Martinez-Tenor"
-__all__: list[str] = ["get_embeddings", "get_env_config", "get_llm"]
+__all__: list[str] = [
+    "DocumentExtractor",
+    "Retriever",
+    "get_embeddings",
+    "get_env_config",
+    "get_llm",
+    "get_logger",
+]

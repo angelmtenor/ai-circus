@@ -1,6 +1,6 @@
 """
 Document extraction module for the AI Circus project using the unstructured package.
-Author: Angel Martinez-Tenor, 2025.
+Author: Angel Martinez-Tenor, 2026.
 
 Dependencies:
 - unstructured[pdf,docx] (install with `pip install "unstructured[pdf,docx]"`)

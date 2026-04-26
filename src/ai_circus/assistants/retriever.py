@@ -1,16 +1,17 @@
 """
 Retriever module for indexing and querying documents using FAISS.
-Author: Angel Martinez-Tenor, 2025.
+Author: Angel Martinez-Tenor, 2026.
 """
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from langchain.embeddings.base import Embeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from pydantic import PrivateAttr
 
 from ai_circus.core.logger import get_logger
 from ai_circus.models import get_embeddings
@@ -21,30 +22,36 @@ logger = get_logger(__name__)
 class Retriever(BaseRetriever):
     """Retriever class for indexing and querying documents using FAISS, with optional hybrid BM25 retrieval."""
 
+    _embeddings: Embeddings = PrivateAttr()
+    _hybrid: bool = PrivateAttr()
+    _default_k: int = PrivateAttr()
+    _vectorstore: FAISS = PrivateAttr()
+    _documents: list[Document] = PrivateAttr(default_factory=list)
+
     @property
     def embeddings(self) -> Embeddings:
         """Return the embeddings instance."""
-        return object.__getattribute__(self, "_embeddings")
+        return self._embeddings
 
     @property
     def hybrid(self) -> bool:
         """Return whether hybrid retrieval is enabled."""
-        return object.__getattribute__(self, "_hybrid")
+        return self._hybrid
 
     @property
     def default_k(self) -> int:
         """Return the default number of documents to retrieve."""
-        return object.__getattribute__(self, "_default_k")
+        return self._default_k
 
     @property
     def vectorstore(self) -> FAISS:
         """Return the FAISS vectorstore."""
-        return object.__getattribute__(self, "_vectorstore")
+        return self._vectorstore
 
     @property
     def documents(self) -> list[Document]:
         """Return the list of documents for hybrid retrieval."""
-        return object.__getattribute__(self, "_documents")
+        return self._documents
 
     def __init__(
         self,
@@ -52,6 +59,7 @@ class Retriever(BaseRetriever):
         model_choice: Literal["openai", "google"] = "openai",
         hybrid: bool = False,
         default_k: int = 4,
+        **kwargs: Any,
     ) -> None:
         """
         Initialize the retriever with embeddings and FAISS vector store.
@@ -62,23 +70,23 @@ class Retriever(BaseRetriever):
                 Defaults to "openai".
             hybrid (bool, optional): Whether to use hybrid retrieval with BM25. Defaults to False.
             default_k (int, optional): Default number of documents to retrieve. Defaults to 4.
+            **kwargs: Additional keyword arguments passed to BaseRetriever.
         """
-        super().__init__()  # Initialize BaseRetriever
+        super().__init__(**kwargs)
         if embeddings is None:
-            object.__setattr__(self, "_embeddings", get_embeddings(model_choice))
+            self._embeddings = get_embeddings(model_choice)
         else:
-            object.__setattr__(self, "_embeddings", embeddings)
+            self._embeddings = embeddings
 
-        # Set additional attributes using object.__setattr__
-        object.__setattr__(self, "_hybrid", hybrid)
-        object.__setattr__(self, "_default_k", default_k)
+        self._hybrid = hybrid
+        self._default_k = default_k
 
         # Initialize empty FAISS index without texts
-        object.__setattr__(self, "_vectorstore", FAISS.from_texts([""], self.embeddings))
-        self.vectorstore.delete([self.vectorstore.index_to_docstore_id[0]])  # Remove dummy document
+        self._vectorstore = FAISS.from_texts([""], self._embeddings)
+        self._vectorstore.delete([self._vectorstore.index_to_docstore_id[0]])  # Remove dummy document
 
         if hybrid:
-            object.__setattr__(self, "_documents", [])
+            self._documents = []
 
         logger.info(
             f"Retriever initialized with model: {model_choice if embeddings is None else 'custom'}, "

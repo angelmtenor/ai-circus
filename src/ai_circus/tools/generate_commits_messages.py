@@ -5,7 +5,7 @@ generate_commit_messages.py
 Tool to generate conventional commit messages for uncommitted changes in a Git repository
 using an LLM. Analyzes all changes together for intelligent grouping into logical commits.
 
-Author: Angel Martinez-Tenor, 2025.
+Author: Angel Martinez-Tenor, 2026.
 """
 
 from __future__ import annotations

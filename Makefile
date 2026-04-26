@@ -63,11 +63,7 @@ build: ## Build the package
 	@echo "✓ build complete"
 
 clean: ## Remove build artifacts, caches, and .venv (with .env backup)
-	@echo "🧹 Cleaning project..."
-	@if [ -f .env ]; then mkdir -p backups; cp .env backups/.env.bak_$$(date +%Y%m%d_%H%M%S); echo "📦 Backed up .env to backups/"; fi
-	@rm -rf $(VENV_DIR)
-	@find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .ruff_cache -o -name build -o -name dist -o -name "*.egg-info" \) -exec rm -rf {} + 2>/dev/null || true; find . -type f \( -name "*.pyc" -o -name ".coverage*" -o -name "coverage.xml" \) -delete 2>/dev/null || true
-	@echo "✓ clean complete"
+	@uv run python scripts/clean.py
 
 zip: ## Zip git-tracked files into project.zip
 	@git archive --format=zip --output=project.zip HEAD || { echo "❌ zip failed."; exit 1; }

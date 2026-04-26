@@ -1,6 +1,6 @@
 """
 Basic intent detector and retriever.
-Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
+Author: Angel Martinez-Tenor, 2026. Adapted from https://github.com/angelmtenor/ds-template
 
 Note: This script expects a `prompts.yaml` file in `ai_circus.assistants`
 """
