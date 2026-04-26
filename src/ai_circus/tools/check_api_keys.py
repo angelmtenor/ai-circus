@@ -1,37 +1,19 @@
 """Tool: Check API Keys and Fetch Data from APIs
-Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
+Author: Angel Martinez-Tenor, 2026.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from functools import lru_cache
 
 import httpx
-from pydantic import SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from ai_circus import get_env_config
 from ai_circus.core.info import info_system
 from ai_circus.core.logger import configure_logger, get_logger
 
 logger = get_logger(__name__)
-
-
-class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
-
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
-
-    openai_api_key: SecretStr = SecretStr("")
-    gemini_api_key: SecretStr = SecretStr("")
-    tavily_api_key: SecretStr = SecretStr("")
-
-
-@lru_cache(maxsize=1)
-def get_settings() -> Settings:
-    """Return cached API settings."""
-    return Settings()
 
 
 @dataclass
@@ -112,7 +94,7 @@ def main() -> None:
     configure_logger(level="INFO")
     logger.info("Starting the script...")
     info_system()
-    settings = get_settings()
+    config = get_env_config()
 
     # API configurations
     api_configs = [
@@ -141,10 +123,10 @@ def main() -> None:
 
     # Retrieve API keys
     api_keys = {
-        "OpenAI": settings.openai_api_key.get_secret_value(),
-        "Google": settings.gemini_api_key.get_secret_value(),  # Google Discovery API uses Gemini key
-        "Gemini": settings.gemini_api_key.get_secret_value(),
-        "Tavily": settings.tavily_api_key.get_secret_value(),
+        "OpenAI": config.OPENAI_API_KEY.get_secret_value() if config.OPENAI_API_KEY else "",
+        "Google": config.GEMINI_API_KEY.get_secret_value() if config.GEMINI_API_KEY else "",
+        "Gemini": config.GEMINI_API_KEY.get_secret_value() if config.GEMINI_API_KEY else "",
+        "Tavily": config.TAVILY_API_KEY.get_secret_value() if config.TAVILY_API_KEY else "",
     }
 
     # Initialize checklist to log the status of each API
@@ -152,28 +134,28 @@ def main() -> None:
 
     # Fetch data from APIs
     client = APIClient()
-    for config in api_configs:
-        api_key = api_keys.get(config.name, "")
+    for api_config in api_configs:
+        api_key = api_keys.get(api_config.name, "")
         if not api_key:
-            logger.warning(f"Skipping {config.name} API due to missing API key")
-            checklist.append(f"[ ] {config.name}: missing API key (skipped)")
+            logger.warning(f"Skipping {api_config.name} API due to missing API key")
+            checklist.append(f"[ ] {api_config.name}: missing API key (skipped)")
             continue
-        logger.info(f"Fetching data from {config.name} API...")
-        data = client.fetch_data(resolve_api_config(config, api_key))
+        logger.info(f"Fetching data from {api_config.name} API...")
+        data = client.fetch_data(resolve_api_config(api_config, api_key))
         if data:
             if isinstance(data, dict):
-                key = get_preview_key(config.name)
+                key = get_preview_key(api_config.name)
                 sample = data.get(key, [])
                 try:
                     preview = sample[:1]
                 except Exception:
                     preview = sample
-                logger.info(f"{config.name} data retrieved: {preview}")
+                logger.info(f"{api_config.name} data retrieved: {preview}")
             else:
-                logger.info(f"{config.name} data retrieved (non-dict): type={type(data)}")
-            checklist.append(f"[✔] {config.name}: data retrieved")
+                logger.info(f"{api_config.name} data retrieved (non-dict): type={type(data)}")
+            checklist.append(f"[✔] {api_config.name}: data retrieved")
         else:
-            checklist.append(f"[ ] {config.name}: call failed")
+            checklist.append(f"[ ] {api_config.name}: call failed")
 
     # Print checklist summary
     logger.info("Checklist summary:")

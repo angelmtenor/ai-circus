@@ -1,6 +1,8 @@
 # Environment and configuration
-.env
+.env*
+!.env.example
 .python-version
+backups/
 
 # macOS
 .DS_Store

@@ -10,16 +10,36 @@ A building block for generative AI tool applications with state-of-the-art perfo
 
 ---
 
+## 🚀 Quick Start
+
+Get up and running in seconds after cloning the repository:
+
+```bash
+make setup    # Initialize venv, .env, generate settings, and verify environment
+make check    # Run QA checks (linting) and tests
+make run      # Run the main hello world application
+```
+
+To verify everything end-to-end before a commit:
+```bash
+make all      # clean -> setup -> check -> run
+```
+
+---
+
 ## Work in Progress
 
 This project is under active development. Features and APIs are subject to change.
 
-Planned work:
+Implemented:
+- Centralized Pydantic configuration (`env_config.yaml`)
+- Validated environment setup (`make setup`)
+- Simplified LLM/Embedding initialization (`ai_circus.get_llm`)
 
+Planned:
 - OpenSearch integration for vector storage
 - Agent framework integration (LangChain, OpenAI SDK, etc.)
 - MCP (Model Context Protocol) support and examples
-- Agentic & MCP connectivity examples
 
 ---
 
@@ -28,82 +48,39 @@ Planned work:
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=FFD43B)
 ![uv](https://img.shields.io/badge/uv-4baaaa?style=for-the-badge&logo=github)
 ![Ruff](https://img.shields.io/badge/Ruff-000000?style=for-the-badge&logo=ruff&logoColor=white)
-![Pyrefly](https://img.shields.io/badge/Pyrefly-61DAFB?style=for-the-badge&logoColor=white)
 ![Pytest](https://img.shields.io/badge/Pytest-0A9DFF?style=for-the-badge&logo=pytest&logoColor=white)
 ![Pre-commit](https://img.shields.io/badge/Pre--commit-FDA50F?style=for-the-badge&logo=pre-commit&logoColor=white)
 
 ---
 
-## Package Usage
+## Configuration
 
-Requires Python 3.13+. Using a virtual environment is strongly recommended.
+The project uses a single source of truth for settings defined in `env_config.yaml`.
 
-```bash
-pip install ai-circus
-# or
-uv add ai-circus
-```
-
-Set up your environment:
-
-```bash
-cp .env.example .env
-# Edit .env and fill in the required API keys
-```
-
-Available CLI tools:
-
-- `ai-hello-world` — simple hello world smoke test
-- `ai-check-api-keys` — validates API keys in your `.env` (OpenAI, Google, Tavily)
-- `ai-commit` — generates and commits a message for your current changes
-- `ai-sample-assistant` — runs the sample assistant demo
+1. Run `make setup` to initialize your `.env` file from `.env.example`.
+2. Edit `.env` to fill in your `OPENAI_API_KEY` and other optional keys.
+3. The application will automatically validate these at runtime using Pydantic.
 
 ---
 
-## Development Setup
-
-### One-time system setup (Debian/Ubuntu)
-
-```bash
-sudo ./.devcontainer/setup_sudo.sh   # configures sudo, installs base packages
-./.devcontainer/setup_user.sh        # installs uv, pre-commit, configures shell
-source ~/.bashrc                     # apply shell changes
-```
-
-### Project setup
-
-After cloning, install dependencies and pre-commit hooks:
-
-```bash
-make install
-```
-
-Then verify the full environment (venv, uv, packages, env vars):
-
-```bash
-make check
-```
-
-### Common workflows
+## Common Workflows
 
 | Command | Description |
 |---|---|
-| `make install` | Sync deps and install pre-commit hooks |
-| `make check` | Verify full environment via `check_full_env.py` |
-| `make update` | Upgrade lockfile, sync deps, update pre-commit hooks |
-| `make qa` | Run all pre-commit checks (ruff, ruff-format, pyrefly, checkmake, etc.) |
+| `make clean` | Remove `.venv`, caches, and artifacts (with `.env` backup) |
+| `make setup` | Full environment initialization and verification |
+| `make check` | Run `qa` (linting) and `test` (unit tests) |
+| `make run` | Execute the main application |
+| `make qa` | Run pre-commit hooks (ruff, etc.) |
 | `make test` | Run the pytest suite |
-| `make all` | Run qa + test + build |
-| `make build` | Build the package |
-| `make clean` | Remove build artifacts and caches |
-| `make unused-packages` | Detect unused dependencies via deptry |
-| `make spacy-models` | Download required spaCy models |
-| `make zip` | Archive git-tracked files into `project.zip` |
+| `make all` | Full end-to-end verification pipeline |
+| `make update` | Upgrade lockfile, sync deps, update pre-commit hooks |
 
 ---
 
 ## Contributing
 
-- Review the [Style Guide](styleguide.md) for commit message and coding conventions
-- See [Contributing Guidelines](CONTRIBUTING.md) for the workflow and submission process
-- Please follow the [Code of Conduct](CODE_OF_CONDUCT.md)
+- Please refer to [AGENTS.md](AGENTS.md) for strict architectural and testing guidelines.
+- Review the [Style Guide](styleguide.md) for commit message and coding conventions.
+- See [Contributing Guidelines](CONTRIBUTING.md) for the workflow and submission process.
+- Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).

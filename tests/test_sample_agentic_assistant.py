@@ -32,11 +32,8 @@ async def test_build_assistant_creates_context_with_vector_store(monkeypatch: ob
         def get_secret_value(self) -> str:
             return "sk-test-12345678901234567890"
 
-    class FakeSettings:
-        openai_base_url = None
-
-        def api_key(self, provider: str) -> FakeSecret | None:
-            return FakeSecret() if provider == "openai" else None
+    class FakeEnvConfig:
+        OPENAI_API_KEY = FakeSecret()
 
     class FakeVectorStore:
         def __init__(self, embedding_model: str) -> None:
@@ -47,7 +44,7 @@ async def test_build_assistant_creates_context_with_vector_store(monkeypatch: ob
             recorded["texts"] = texts
             recorded["metadatas"] = metadatas
 
-    monkeypatch.setattr(sample_agentic, "get_settings", lambda: FakeSettings())
+    monkeypatch.setattr(sample_agentic, "get_env_config", lambda: FakeEnvConfig())
     monkeypatch.setattr(sample_agentic, "configure_agents_runtime", lambda: recorded.setdefault("configured", True))
     monkeypatch.setattr(sample_agentic, "SimpleVectorStore", FakeVectorStore)
     monkeypatch.setattr(

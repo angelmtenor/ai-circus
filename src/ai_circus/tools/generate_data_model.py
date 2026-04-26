@@ -72,6 +72,7 @@ def generate_data_model(
         "from __future__ import annotations",
         "",
         "import re",
+        "from functools import lru_cache",
         "from typing import Any",
         "",
         "from pydantic import Field, SecretStr, field_validator",
@@ -147,9 +148,6 @@ def generate_data_model(
             ])
 
     lines.extend([
-        "",
-        "",
-        "from functools import lru_cache",
         "",
         "",
         "EnvConfig.model_rebuild()",

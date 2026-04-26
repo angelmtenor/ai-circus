@@ -1,6 +1,6 @@
 """Tests for the API client module.
 
-Author: Angel Martinez-Tenor, 2025.
+Author: Angel Martinez-Tenor, 2026.
 """
 
 from __future__ import annotations
@@ -9,27 +9,9 @@ import importlib
 
 import pytest
 
-from ai_circus.tools.check_api_keys import APIClient, APIConfig, Settings, resolve_api_config
+from ai_circus.tools.check_api_keys import APIClient, APIConfig, resolve_api_config
 
 api_client_module = importlib.import_module("ai_circus.tools.check_api_keys")
-
-
-class TestSettings:
-    """Tests for API Settings configuration."""
-
-    def test_settings_defaults(self) -> None:
-        """Test that Settings loads with values from environment or defaults."""
-        settings = Settings()
-        # Settings loads from environment, so we just verify they are SecretStr objects
-        assert hasattr(settings.openai_api_key, "get_secret_value")
-        assert hasattr(settings.gemini_api_key, "get_secret_value")
-        assert hasattr(settings.tavily_api_key, "get_secret_value")
-
-    def test_settings_extra_ignored(self) -> None:
-        """Test that extra environment variables are ignored."""
-        # This tests the 'extra = ignore' config
-        settings = Settings()
-        assert not hasattr(settings, "extra_field")
 
 
 class TestAPIConfig:

@@ -26,6 +26,9 @@ class EnvConfig(BaseSettings):
         extra="ignore",
         case_sensitive=True,
     )
+    LLM_PROVIDER: str = Field(description="Default LLM provider to use (openai or google)", default="google")
+    OPENAI_MODEL: str = Field(description="Default OpenAI model to use", default="gpt-5.4-mini")
+    GEMINI_MODEL: str = Field(description="Default Google/Gemini model to use", default="gemini-3-flash-preview")
     OPENAI_API_KEY: SecretStr = Field(
         description="API key for accessing OpenAI services for AI-related functionalities"
     )

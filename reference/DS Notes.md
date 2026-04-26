@@ -88,7 +88,8 @@
 
 ```python
 from cryptography.fernet import Fernet
-key = os.getenv('ENCRYPTION_KEY')  # Never hardcode
+
+key = os.getenv("ENCRYPTION_KEY")  # Never hardcode
 cipher = Fernet(key)
 decrypted = cipher.decrypt(encrypted_data)
 ```

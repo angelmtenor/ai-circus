@@ -1,7 +1,7 @@
 """
 Agentic Assistant for Intent Detection and Document Retrieval.
 Rewritten using OpenAI Agents SDK (agents-as-tools + handoffs pattern).
-Author: Refactored 2025.
+Author: Angel Martinez-Tenor, 2026.
 
 Architecture:
   - OrchestratorAgent  → routes queries, manages conversation
@@ -30,14 +30,14 @@ from agents import (
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
+from ai_circus import get_env_config
 from ai_circus.core.logger import configure_logger, get_logger
-from ai_circus.models import get_settings
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
-MODEL: str = "gpt-5.4-mini"  # fast + cheap; swap for gpt-4o for best quality
+MODEL: str = "gpt-4o-mini"
 EMBEDDING_MODEL: str = "text-embedding-3-small"
 TOP_K_RETRIEVAL: int = 3
 CHUNK_SIZE: int = 2000
@@ -93,12 +93,11 @@ class SimpleVectorStore:
 
     def __init__(self, embedding_model: str = EMBEDDING_MODEL) -> None:
         """Initialize the vector store with OpenAI client."""
-        settings = get_settings()
+        config = get_env_config()
         self._embedding_model = embedding_model
-        api_key = settings.api_key("openai")
+        api_key = config.OPENAI_API_KEY
         self._client = AsyncOpenAI(
             api_key=api_key.get_secret_value() if api_key else None,
-            base_url=settings.openai_base_url,
         )
         self._texts: list[str] = []
         self._metadatas: list[dict] = []
@@ -200,11 +199,10 @@ async def detect_intent(ctx: RunContextWrapper[AssistantContext], user_query: st
     Returns a JSON IntentResult with keys: intent, confidence, reasoning.
     Intent is one of: DOCUMENT_QUERY, CHIT_CHAT, OUT_OF_SCOPE, FOLLOW_UP.
     """
-    settings = get_settings()
-    api_key = settings.api_key("openai")
+    config = get_env_config()
+    api_key = config.OPENAI_API_KEY
     client = AsyncOpenAI(
         api_key=api_key.get_secret_value() if api_key else None,
-        base_url=settings.openai_base_url,
     )
     completion = await client.beta.chat.completions.parse(
         model=MODEL,
@@ -341,12 +339,10 @@ async def build_assistant(
         A populated AssistantContext ready for querying.
     """
     configure_agents_runtime()
-    settings = get_settings()
-    api_key = settings.api_key("openai")
+    config = get_env_config()
+    api_key = config.OPENAI_API_KEY
     if api_key:
         os.environ["OPENAI_API_KEY"] = api_key.get_secret_value()
-    if settings.openai_base_url:
-        os.environ["OPENAI_BASE_URL"] = settings.openai_base_url
 
     try:
         logger.info(f"Loading document: {file_path}")

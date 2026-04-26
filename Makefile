@@ -1,4 +1,4 @@
-# Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
+# Author: Angel Martinez-Tenor, 2026. Adapted from https://github.com/angelmtenor/ds-template
 
 VENV_DIR      := .venv
 .DEFAULT_GOAL := help
@@ -16,22 +16,21 @@ help: ## Show this help message
 
 # ── Bootstrap ─────────────────────────────────────────────────────────────────
 
-setup: ## Complete setup: install dependencies, download models, and verify environment (run after cloning)
+setup: ## Complete setup: venv, .env, generate settings, and verify environment
 	@echo "🚀 Starting complete setup..."
-	@uv sync --extra optional && uv run pre-commit install && uv run python -m spacy download en_core_web_sm || { echo "❌ setup failed or spaCy download failed (may require manual: make spacy-models)"; exit 1; }
-	@$(MAKE) generate
-	@uv run python check_full_env.py || { echo "❌ Environment check failed."; exit 1; }
+	@if [ ! -f .env ] && [ -f .env.example ]; then echo "📝 Creating .env from .env.example..."; cp .env.example .env; fi
+	@uv sync --extra optional && uv run pre-commit install && uv run python -m spacy download en_core_web_sm || { echo "❌ setup failed"; exit 1; }
+	@$(MAKE) generate && uv run python check_full_env.py || { echo "⚠️  Environment check found issues."; }
 	@echo "✓ Complete setup finished!"
 
 install: ## Sync deps, install pre-commit hooks, and download spaCy models (run after cloning)
 	@uv sync --extra optional     || { echo "❌ uv sync failed."; exit 1; }
 	@uv run pre-commit install    || { echo "❌ pre-commit install failed."; exit 1; }
-	@uv run python -m spacy download en_core_web_sm || { echo "⚠️  spaCy model download failed (may require manual: make spacy-models)"; }
+	@uv run python -m spacy download en_core_web_sm || { echo "⚠️  spaCy model download failed"; }
 	@echo "✓ install complete"
 
-check: ## Verify full environment (venv, uv, packages, env vars)
-	@uv run python check_full_env.py || { echo "❌ Environment check failed."; exit 1; }
-	@echo "✓ Environment ready"
+check: qa test ## Verify code quality and run tests
+	@echo "✓ Check complete"
 
 update: ## Upgrade lockfile, sync deps & update pre-commit hooks
 	@uv lock --upgrade            || { echo "❌ uv lock upgrade failed."; exit 1; }
@@ -43,7 +42,7 @@ update: ## Upgrade lockfile, sync deps & update pre-commit hooks
 # ── Dev workflow ──────────────────────────────────────────────────────────────
 
 generate: ## Generate Pydantic data model from env_config.yaml
-	@uv run ai-generate-data-model
+	@uv run ai-generate-data-model && uv run ruff format src/ai_circus/data_model.py
 
 qa: ## Run all pre-commit checks (ruff, ruff-format, etc.)
 	@uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }
@@ -57,17 +56,17 @@ unused-packages: ## Detect unused packages (deptry)
 
 # ── Build / release ───────────────────────────────────────────────────────────
 
-all: qa test build ## Run qa, tests and build
+all: clean setup check run ## Full end-to-end verification: clean, setup, check, and run
 
 build: ## Build the package
 	@uv build || { echo "❌ build failed."; exit 1; }
 	@echo "✓ build complete"
 
-clean: ## Remove build artifacts and caches
-	@find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .ruff_cache \
-		-o -name build -o -name dist -o -name "*.egg-info" \) -exec rm -rf {} + 2>/dev/null || true
-	@find . -type f \( -name "*.pyc" -o -name ".coverage*" -o -name "coverage.xml" \) \
-		-delete 2>/dev/null || true
+clean: ## Remove build artifacts, caches, and .venv (with .env backup)
+	@echo "🧹 Cleaning project..."
+	@if [ -f .env ]; then mkdir -p backups; cp .env backups/.env.bak_$$(date +%Y%m%d_%H%M%S); echo "📦 Backed up .env to backups/"; fi
+	@rm -rf $(VENV_DIR)
+	@find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .ruff_cache -o -name build -o -name dist -o -name "*.egg-info" \) -exec rm -rf {} + 2>/dev/null || true; find . -type f \( -name "*.pyc" -o -name ".coverage*" -o -name "coverage.xml" \) -delete 2>/dev/null || true
 	@echo "✓ clean complete"
 
 zip: ## Zip git-tracked files into project.zip

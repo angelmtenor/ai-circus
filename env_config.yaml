@@ -1,8 +1,29 @@
 # Configuration file for environment variables required by the application
-# Author: Angel Martinez-Tenor, 2025.
+# Author: Angel Martinez-Tenor, 2026.
 # Defines variable names, descriptions, types, constraints, and validation rules
 
 env_variables:
+  - name: LLM_PROVIDER
+    description: "Default LLM provider to use (openai or google)"
+    type: string
+    mandatory: true
+    secret: false
+    default: "google"
+
+  - name: OPENAI_MODEL
+    description: "Default OpenAI model to use"
+    type: string
+    mandatory: true
+    secret: false
+    default: "gpt-5.4-mini"
+
+  - name: GEMINI_MODEL
+    description: "Default Google/Gemini model to use"
+    type: string
+    mandatory: true
+    secret: false
+    default: "gemini-3-flash-preview"
+
   - name: OPENAI_API_KEY
     description: API key for accessing OpenAI services for AI-related functionalities
     type: string

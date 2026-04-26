@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import sys
-from types import ModuleType, SimpleNamespace
+from types import SimpleNamespace
 from typing import ClassVar
 
 import pytest
@@ -60,24 +59,31 @@ def test_main_runs_with_lazy_configuration(monkeypatch: pytest.MonkeyPatch) -> N
             return "sk-test-12345678901234567890"
 
     class FakeEnvConfig:
-        model_fields: ClassVar[dict[str, object]] = {"OPENAI_API_KEY": object(), "LLM_LANGUAGES": object()}
+        model_fields: ClassVar[dict[str, object]] = {
+            "OPENAI_API_KEY": object(),
+            "LLM_LANGUAGES": object(),
+            "LLM_PROVIDER": object(),
+            "OPENAI_MODEL": object(),
+            "GEMINI_MODEL": object(),
+        }
 
-    fake_env = SimpleNamespace(OPENAI_API_KEY=FakeSecret(), LLM_LANGUAGES="Spanish")
-    fake_data_model = ModuleType("ai_circus.data_model")
-    fake_data_model.EnvConfig = FakeEnvConfig
-    fake_data_model.get_env_config = lambda: fake_env
+    fake_env = SimpleNamespace(
+        OPENAI_API_KEY=FakeSecret(),
+        LLM_LANGUAGES="Spanish",
+        LLM_PROVIDER="openai",
+        OPENAI_MODEL="gpt-4o",
+        GEMINI_MODEL="gemini-1.5-flash",
+        model_fields=FakeEnvConfig.model_fields,
+    )
 
     class FakeLLM:
         def invoke(self, prompt: str) -> SimpleNamespace:
             return SimpleNamespace(content=f"response for {prompt}")
 
-    fake_models = ModuleType("ai_circus.models")
-    fake_models.get_llm = lambda provider=None: FakeLLM()
-
     monkeypatch.setattr(app, "logger", fake_logger)
     monkeypatch.setattr(app, "configure_logger", lambda: None)
-    monkeypatch.setitem(sys.modules, "ai_circus.data_model", fake_data_model)
-    monkeypatch.setitem(sys.modules, "ai_circus.models", fake_models)
+    monkeypatch.setattr(app, "get_env_config", lambda: fake_env)
+    monkeypatch.setattr(app, "get_llm", lambda: FakeLLM())
 
     app.main()
 
@@ -90,17 +96,12 @@ def test_main_exits_on_validation_error(monkeypatch: pytest.MonkeyPatch) -> None
     fake_logger = FakeLogger()
     validation_error = build_validation_error()
 
-    fake_data_model = ModuleType("ai_circus.data_model")
-    fake_data_model.EnvConfig = SimpleNamespace(model_fields={})
-
     def raise_validation_error() -> object:
         raise validation_error
 
-    fake_data_model.get_env_config = raise_validation_error
-
     monkeypatch.setattr(app, "logger", fake_logger)
     monkeypatch.setattr(app, "configure_logger", lambda: None)
-    monkeypatch.setitem(sys.modules, "ai_circus.data_model", fake_data_model)
+    monkeypatch.setattr(app, "get_env_config", raise_validation_error)
 
     with pytest.raises(SystemExit) as exc_info:
         app.main()

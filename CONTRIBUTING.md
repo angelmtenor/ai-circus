@@ -9,15 +9,18 @@ Before you start, please take a moment to read our [Code of Conduct](CODE_OF_CON
 If you're new to contributing, don't worry! We're here to help. Here are the general steps to follow:
 
 1. **Discuss the Change**: Before making significant changes, it's a good idea to discuss them with the project maintainers. You can do this by opening an issue or starting a discussion.
-2. **Fork the Repository**: Create a fork of this repository on GitHub.
-3. **Clone Your Fork**: Clone your forked repository to your local machine.
-4. **Create a Feature Branch**: Create a new branch for your changes.
-5. **Make Changes**: Implement your changes, following the project's coding standards and guidelines.
-6. **Run Tests**: Ensure your changes pass all tests. You can run tests using `make test`.
-7. **Commit Your Changes**: Commit your changes with clear and descriptive messages.
-8. **Push Your Branch**: Push your feature branch to your fork on GitHub.
-9. **Open a Pull Request**: Open a pull request from your feature branch to the main branch of the original repository.
-10. **Follow Up**: Respond to any feedback or requests for changes from the maintainers.
+2. **Review Guidelines**: Read [AGENTS.md](AGENTS.md) for strict architectural and testing guidelines.
+3. **Fork the Repository**: Create a fork of this repository on GitHub.
+4. **Clone Your Fork**: Clone your forked repository to your local machine.
+5. **Create a Feature Branch**: Create a new branch for your changes.
+6. **Set Up Environment**: Run `make setup` to initialize your environment.
+7. **Make Changes**: Implement your changes, following the project's coding standards and guidelines.
+8. **Run Tests and Checks**: Ensure your changes pass all quality checks and tests using `make check`.
+9. **Full Verification**: Before committing, run `make all` to verify the entire pipeline (clean -> setup -> check -> run).
+10. **Commit Your Changes**: Commit your changes with clear and descriptive messages.
+11. **Push Your Branch**: Push your feature branch to your fork on GitHub.
+12. **Open a Pull Request**: Open a pull request from your feature branch to the main branch of the original repository.
+13. **Follow Up**: Respond to any feedback or requests for changes from the maintainers.
 
 ## Setting Up Your Environment
 
@@ -28,20 +31,32 @@ To set up your local development environment:
    ```bash
    git clone https://github.com/your-username/ai-circus
    ```
-3. **Create a feature branch**:
+3. **Run setup**:
+   ```bash
+   make setup
+   ```
+4. **Create a feature branch**:
    ```bash
    git checkout -b descriptive-feature-name
    ```
 
 ## Code Quality and Testing
 
-- Run pre-commit checks:
+- Run quality checks (linting, formatting):
   ```bash
   make qa
   ```
 - Run tests:
   ```bash
   make test
+  ```
+- Combined check:
+  ```bash
+  make check
+  ```
+- End-to-end verification:
+  ```bash
+  make all
   ```
 
 ## Pull Request Process
