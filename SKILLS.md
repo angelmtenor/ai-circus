@@ -1,0 +1,44 @@
+# SKILLS.md - ai_circus Architecture & Coding Standards
+
+This document outlines the specific domain knowledge, coding conventions, and architectural patterns required for the `ai_circus` Python project. Agents must adhere to these standards when writing or refactoring code.
+
+## 1. Configuration & State Management
+**Single Source of Truth:** All application settings MUST be defined in `env_config.yaml`.
+- **Synchronization Workflow:** When you need to add or change a configuration setting:
+  1. Update `env_config.yaml`.
+  2. Run `make generate` to sync `src/ai_circus/data_model.py` and `.env.example`.
+- **Prohibition:** NEVER define redundant `Settings` classes or load `.env` files manually using `dotenv` for core app logic.
+  - **✅ Good:** `config = ai_circus.get_env_config()`
+  - **❌ Bad:** `load_dotenv(); os.getenv("API_KEY")`
+
+## 2. Simplified Public API & Architecture
+- **Package Root Imports:** Always prefer importing core functions directly from the package root.
+  - **✅ Good:** `from ai_circus import get_llm, get_embeddings, get_env_config`
+  - **❌ Bad:** `from ai_circus.core.llm_provider import get_llm`
+- **Standard Models:** Default to `gemini-3-flash-preview` (Google) and `gpt-5.4-mini` (OpenAI) unless instructed otherwise.
+- **LangChain Usage:** Use standard parameters (`model`, `api_key`, `temperature`). Avoid non-standard or experimental arguments like `verbosity` or `reasoning_effort` in constructors.
+
+## 3. Scripting, Makefile, & Portability
+- **Makefile Constraints:** Target bodies in the `Makefile` must be kept short to satisfy the `checkmake` linter. Delegate any complex logic to dedicated Python scripts in a `scripts/` directory.
+- **Safe Redirection:** Never use `sed -i` as it is non-portable between GNU and macOS/BSD.
+  - **✅ Good:** `sed '...' file > file.tmp && mv file.tmp file`
+- **Preservation:** The `make clean` target must preserve dated `.env` backups in the `backups/` folder.
+
+## 4. Git Workflow & Hygiene
+- **Branching Conventions:** Use descriptive branch names grouped by intent:
+  - `feature/short-description`
+  - `fix/issue-description`
+  - `docs/update-description`
+- **Commit Standards:** Adhere to the Git commit message style defined in `styleguide.md` (Conventional Commits with project-specific types like `data`, `setup`, and `clean`).
+
+## 5. Dependency Management
+- **Tooling:** This project uses `uv` for fast, reliable Python package management.
+- **Workflow:**
+  - ALWAYS use `uv add <package>` or `uv remove <package>` to modify dependencies.
+  - NEVER use `pip install` directly.
+  - After changing dependencies, run `make setup` to ensure the local environment and `pyproject.toml` are in sync.
+
+## 6. Documentation Responsibility
+- **Docstring Accuracy:** Keep docstrings updated. Every new file must include the standard header: `Author: Angel Martinez-Tenor, 2026`.
+- **Module Exports:** Ensure `src/ai_circus/__init__.py` properly exports all new public components via `__all__ = [...]`.
+- **README Updates:** If the onboarding workflow, CLI tools, or `Makefile` targets change, you must update the "Quick Start" or "CLI Tools" sections in `README.md`.
