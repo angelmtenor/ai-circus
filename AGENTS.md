@@ -1,51 +1,53 @@
 # AGENTS.md - GenAI Development & Verification Guide
 
-This document defines the strict operational standards for GenAI assistants (including Gemini CLI and project-internal agents) when developing, refactoring, or verifying this repository.
+This document defines the foundational mandates and operational workflows for GenAI assistants (including Gemini CLI and project-internal agents). Adherence to these rules is mandatory to ensure repository integrity, security, and quality.
 
-## 1. Development Principles
+## 1. Core Mandates (Priority Zero)
 
-### Single Source of Truth for Config
-- **Mandate:** All application settings MUST be defined in `env_config.yaml`.
-- **Workflow:** When adding a new environment variable:
+### 🚨 Security & System Integrity
+- **Credential Protection:** NEVER log, print, or commit secrets, API keys, or sensitive credentials.
+- **Ignore Rules:** Files matching `.env*` (except `.env.example`) and the `backups/` directory MUST remain ignored in `.gitignore`.
+- **Pre-Commit Audit:** Before proposing a commit, agents must verify that no sensitive data or temporary `.env` files are in the staged changes.
+
+### 👥 Human-in-the-Loop Protocol
+- **Inspection Required:** Agents must never commit code until the human operator has inspected the proposed changes and provided explicit validation.
+- **No Pushing:** Agents are STRICTLY PROHIBITED from running `git push`. All updates to remote repositories must be performed manually by the user.
+- **Confirmation Loop:** For every destructive or significant operation, explain the intent first and wait for approval.
+
+### ✅ Verification is Mandatory
+- **Definition of Done:** A task is NOT complete until `make check` (QA + Test) and `make run` (App Smoke Test) pass successfully.
+- **End-to-End Pipeline:** For significant refactors or initial setups, run `make all` to verify the entire lifecycle: `clean` -> `setup` -> `check` -> `run`.
+- **Test-Driven:** Every bug fix or feature implementation must include corresponding unit tests in the `tests/` directory. Use mocks (via `monkeypatch`) to ensure tests are fast and deterministic.
+
+## 2. Development Standards
+
+### Single Source of Truth for Configuration
+- **Centralized Config:** All application settings MUST be defined in `env_config.yaml`.
+- **Synchronization:** When changing settings:
     1. Update `env_config.yaml`.
-    2. Run `make generate` to synchronize `src/ai_circus/data_model.py` and `.env.example`.
-- **Prohibition:** NEVER define redundant `Settings` classes or load `.env` files manually using `dotenv` or `os.getenv` for core app logic. Always use `ai_circus.get_env_config()`.
+    2. Run `make generate` to sync `src/ai_circus/data_model.py` and `.env.example`.
+- **Prohibition:** NEVER define redundant `Settings` classes or load `.env` files manually using `dotenv` for core app logic. Always use `ai_circus.get_env_config()`.
 
-### Simplified Public API
-- **Mandate:** Prefer importing core functions directly from the package root:
+### Simplified Public API & Architecture
+- **Package Root Imports:** Prefer importing core functions directly from the package root:
     ```python
     from ai_circus import get_llm, get_embeddings, get_env_config
     ```
-- **Prohibition:** Avoid deep internal imports (e.g., `ai_circus.models.get_llm`) unless specifically required for low-level overrides.
+- **Standard Models:** Default to `gemini-3-flash-preview` (Google) and `gpt-5.4-mini` (OpenAI).
+- **LangChain Usage:** Use standard parameters (`model`, `api_key`, `temperature`). Avoid non-standard args like `verbosity` or `reasoning_effort` in constructors.
 
-### Model & Parameter Standards
-- **Standard Models:** Default to `gemini-3-flash-preview` (Google) or `gpt-5.4-mini` (OpenAI).
-- **LangChain Usage:** Use standard LangChain parameters (`model`, `api_key`, `temperature`, `base_url`).
-- **Prohibition:** DO NOT pass non-standard parameters like `verbosity` or `reasoning_effort` to the `ChatOpenAI` constructor unless they are officially supported in the version used.
+### Scripting & Portability
+- **Makefile Constraints:** Target bodies in the `Makefile` must be kept short to satisfy the `checkmake` linter. Delegate complex logic to dedicated Python scripts.
+- **Safe Redirection:** Never use `sed -i` (non-portable). Use the safe pattern: `sed '...' file > file.tmp && mv file.tmp file`.
 
-## 2. Git & Security Hygiene
+## 3. Git Workflow & Hygiene
 
-- **Sensitive Files:** Files starting with `.env*` (except `.env.example`) and the `backups/` directory MUST remain ignored in `.gitignore`.
-- **Backups:** When performing a `make clean`, ensure existing `.env` files are backed up to the `backups/` folder with a timestamp.
-
-## 3. The Verification Pipeline
-
-An agent's task is NOT complete until it has passed the full verification pipeline.
-
-### Step 1: Quality Assurance & Unit Testing
-- Run `make check` to execute `qa` (linting/formatting) and `test` (unit tests).
-- If `make generate` was run, ensure the resulting code is formatted (the `Makefile` target handles this automatically).
-
-### Step 2: End-to-End Verification
-- **Mandate:** Before proposing a commit or final solution, run `make all`.
-- **Pipeline:** `clean` -> `setup` -> `check` -> `run`.
-- This ensures that the environment can be built from scratch, quality checks pass, and the application smoke test (`make run`) succeeds.
-
-### Step 3: Test Coverage
-- ALWAYS update or create test cases in the `tests/` directory for any logic changes.
-- Use mocks (via `monkeypatch`) for LLM calls to keep tests fast and deterministic.
+- **Branching Conventions:** Use descriptive branch names grouped by intent (e.g., `feature/...`, `fix/...`, `docs/...`).
+- **Commit Standards:** Adhere to the Conventional Commits format to maintain a clear history.
+- **Preservation:** The `make clean` target must preserve dated `.env` backups in the `backups/` folder.
 
 ## 4. Documentation Responsibility
-- Keep docstrings updated with accurate `Author` and `Date` (standardize on 2026).
-- Update `README.md` if the user-facing onboarding or CLI toolset changes.
-- Ensure `src/ai_circus/__init__.py` properly exports new public components via `__all__`.
+
+- **Docstring Accuracy:** Keep docstrings updated with standard headers: `Author: Angel Martinez-Tenor, 2026`.
+- **Module Exports:** Ensure `src/ai_circus/__init__.py` properly exports all new public components via `__all__`.
+- **README Updates:** Update the "Quick Start" or "CLI Tools" sections if the onboarding workflow or available scripts change.
