@@ -12,6 +12,7 @@ Author: Angel Martinez-Tenor, 2026.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from pathlib import Path
 
 import yaml
@@ -53,7 +54,9 @@ def generate_data_model(
 ) -> None:
     """Read YAML config and write the Pydantic model file."""
     with open(config_path, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        raw_yaml = f.read()
+    config = yaml.safe_load(raw_yaml)
+    yaml_hash = hashlib.sha256(raw_yaml.encode()).hexdigest()
 
     global_settings = config.get("global_settings", {})
     env_file = global_settings.get("env_file", ".env")
@@ -150,6 +153,9 @@ def generate_data_model(
     lines.extend([
         "",
         "",
+        f'_SOURCE_YAML_HASH = "{yaml_hash}"',
+        "",
+        "",
         "EnvConfig.model_rebuild()",
         "",
         "",
@@ -192,6 +198,41 @@ def main() -> None:
     args = parser.parse_args()
 
     generate_data_model(args.config, args.output, args.env_example)
+
+
+def check_env_drift() -> None:
+    """Verify that data_model.py is in sync with env_config.yaml."""
+    config_path = Path(DEFAULT_CONFIG)
+    output_path = Path(DEFAULT_OUTPUT)
+
+    if not config_path.exists():
+        logger.error("Config file not found: {}", config_path)
+        raise SystemExit(1)
+    if not output_path.exists():
+        logger.error("Data model not found: {}. Run 'make generate'.", output_path)
+        raise SystemExit(1)
+
+    current_hash = hashlib.sha256(config_path.read_bytes()).hexdigest()
+
+    model_content = output_path.read_text(encoding="utf-8")
+    import re
+
+    match = re.search(r'_SOURCE_YAML_HASH = "([a-f0-9]{64})"', model_content)
+    if not match:
+        logger.warning("No hash found in {}. Regenerate with 'make generate'.", output_path)
+        raise SystemExit(1)
+
+    embedded_hash = match.group(1)
+    if current_hash != embedded_hash:
+        logger.error(
+            "Drift detected! env_config.yaml has changed since last 'make generate'.\n"
+            "  Expected: {}\n  Current:  {}\n  Fix: run 'make generate'",
+            embedded_hash[:12],
+            current_hash[:12],
+        )
+        raise SystemExit(1)
+
+    logger.info("✓ data_model.py is in sync with env_config.yaml")
 
 
 if __name__ == "__main__":

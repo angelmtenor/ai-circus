@@ -3,6 +3,7 @@
 !.env.example
 .python-version
 backups/
+.cache/
 
 # macOS
 .DS_Store

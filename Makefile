@@ -3,10 +3,16 @@
 VENV_DIR      := .venv
 .DEFAULT_GOAL := help
 
+# Export .env variables (includes SSL_CERT_FILE if configured)
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
+
 CYAN  := $(shell tput setaf 6 2>/dev/null)
 RESET := $(shell tput sgr0 2>/dev/null)
 
-.PHONY: help setup install check update qa test unused-packages all build clean zip spacy-models generate run ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model ai-app
+.PHONY: help setup install check update qa ssl-check test unused-packages all build clean zip spacy-models generate run ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model ai-app
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -44,8 +50,12 @@ update: ## Upgrade lockfile, sync deps & update pre-commit hooks
 generate: ## Generate Pydantic data model from env_config.yaml
 	@uv run ai-generate-data-model && uv run ruff format src/ai_circus/data_model.py
 
+ssl-check: ## Detect and configure SSL CA bundle (for networks with SSL inspection)
+	@uv run python scripts/ssl_setup.py
+
 qa: ## Run all pre-commit checks (ruff, ruff-format, etc.)
-	@uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }
+	@$(MAKE) ssl-check
+	@set -a && [ -f .env ] && . .env; uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }
 	@echo "✓ qa complete"
 
 test: ## Run test suite
