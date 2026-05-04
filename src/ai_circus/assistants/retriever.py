@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from langchain.embeddings.base import Embeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from pydantic import PrivateAttr
 
@@ -132,15 +132,11 @@ class Retriever(BaseRetriever):
             return []
 
         if self.hybrid:
-            vector_retriever = self.vectorstore.as_retriever(search_kwargs={"k": k})
+            # NOTE: True BM25 hybrid retrieval is not yet implemented.
+            # Falls back to vector-only search. Implement BM25 fusion here when needed.
+            logger.warning("hybrid=True is set but BM25 is not yet implemented — using vector search only")
 
-            return vector_retriever.invoke(query)
-        else:
-            return self.vectorstore.as_retriever(search_kwargs={"k": k}).invoke(query)
-
-    def get_relevant_documents(self, query: str) -> list[Document]:
-        """Return relevant documents using the retriever's default configuration."""
-        return self.retrieve(query, k=self.default_k)
+        return self.vectorstore.as_retriever(search_kwargs={"k": k}).invoke(query)
 
     def _get_relevant_documents(self, query: str, *, run_manager: object | None = None) -> list[Document]:
         """
@@ -153,7 +149,7 @@ class Retriever(BaseRetriever):
         Returns:
             list[Document]: List of relevant documents.
         """
-        return self.get_relevant_documents(query)
+        return self.retrieve(query, k=self.default_k)
 
 
 if __name__ == "__main__":

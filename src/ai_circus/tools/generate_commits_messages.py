@@ -92,7 +92,8 @@ def get_changed_files() -> list[dict[str, str]]:
         if any(re.search(p, file_path) for p in EXCLUDED_PATTERNS):
             continue
         diff = run_git_command(["git", "diff", "--cached", "--", file_path])
-        diff = "\n".join(diff.splitlines()[:20]) + ("\n... (truncated)" if diff else "")
+        diff_lines = diff.splitlines()
+        diff = "\n".join(diff_lines[:20]) + ("\n... (truncated)" if len(diff_lines) > 20 else "")
         changes.append({"file": file_path, "status": status, "diff": diff or "No changes in diff"})
 
     # Unstaged changes
@@ -104,7 +105,8 @@ def get_changed_files() -> list[dict[str, str]]:
         if any(re.search(p, file_path) for p in EXCLUDED_PATTERNS):
             continue
         diff = run_git_command(["git", "diff", "--", file_path])
-        diff = "\n".join(diff.splitlines()[:20]) + ("\n... (truncated)" if diff else "")
+        diff_lines = diff.splitlines()
+        diff = "\n".join(diff_lines[:20]) + ("\n... (truncated)" if len(diff_lines) > 20 else "")
         changes.append({"file": file_path, "status": status, "diff": diff or "No changes in diff"})
 
     # Untracked files

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 from pathlib import Path
 
 import yaml
@@ -215,7 +216,6 @@ def check_env_drift() -> None:
     current_hash = hashlib.sha256(config_path.read_bytes()).hexdigest()
 
     model_content = output_path.read_text(encoding="utf-8")
-    import re
 
     match = re.search(r'_SOURCE_YAML_HASH = "([a-f0-9]{64})"', model_content)
     if not match:

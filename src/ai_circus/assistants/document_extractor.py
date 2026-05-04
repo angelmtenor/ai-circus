@@ -3,8 +3,8 @@ Document extraction module for the AI Circus project using the unstructured pack
 Author: Angel Martinez-Tenor, 2026.
 
 Dependencies:
-- unstructured[pdf,docx] (install with `pip install "unstructured[pdf,docx]"`)
-- langchain-core (install with `pip install langchain-core`)
+- unstructured[pdf,docx] (install with `uv add "unstructured[pdf,docx]"`)
+- langchain-core (install with `uv add langchain-core`)
 """
 
 from __future__ import annotations

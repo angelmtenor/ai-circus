@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -339,10 +338,7 @@ async def build_assistant(
         A populated AssistantContext ready for querying.
     """
     configure_agents_runtime()
-    config = get_env_config()
-    api_key = config.OPENAI_API_KEY
-    if api_key:
-        os.environ["OPENAI_API_KEY"] = api_key.get_secret_value()
+    # NOTE: Do NOT set os.environ["OPENAI_API_KEY"] — SecretStr is passed directly to each client.
 
     try:
         logger.info(f"Loading document: {file_path}")

@@ -180,7 +180,7 @@ def intent_detector_node(state: GraphState) -> GraphState:
     Returns:
         GraphState: Updated state with intent output.
     """
-    llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 500})  # Faster, more deterministic responses
+    llm = get_llm(temperature=0.0, max_tokens=500)  # Faster, more deterministic responses
     prompt = get_prompt_template("intent_detection").format(
         conversation_history=json.dumps(state.history, indent=2),
         user_input=state.user_input,
@@ -204,7 +204,7 @@ def non_retriever_response_node(state: GraphState) -> GraphState:
     Returns:
         GraphState: Updated state with response output and updated history.
     """
-    llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 1000})  # Faster, more deterministic responses
+    llm = get_llm(temperature=0.0, max_tokens=1000)  # Faster, more deterministic responses
     prompt = get_prompt_template("non_retriever_response").format(
         conversation_history=json.dumps(state.history, indent=2), user_input=state.user_input
     )
@@ -232,7 +232,7 @@ def retriever_node(state: GraphState, retriever: Retriever) -> GraphState:
     if state.intent_output.get("intent") == "retrieve":
         try:
             reformulated_question = state.intent_output.get("reformulated_question", "")
-            docs = retriever.get_relevant_documents(reformulated_question)
+            docs = retriever.invoke(reformulated_question)
             state.retrieved_documents = [doc.page_content for doc in docs]
             logger.debug(f"Retrieved {len(docs)} documents for query: {reformulated_question}")
         except Exception as e:
@@ -250,7 +250,7 @@ def post_retriever_response_node(state: GraphState) -> GraphState:
     Returns:
         GraphState: Updated state with response output and updated history.
     """
-    llm = get_llm(model_kwargs={"temperature": 0.0, "max_tokens": 1500})  # Faster, more deterministic responses
+    llm = get_llm(temperature=0.0, max_tokens=1500)  # Faster, more deterministic responses
     prompt = get_prompt_template("post_retriever_response").format(
         conversation_history=json.dumps(state.history, indent=2),
         user_input=state.user_input,
