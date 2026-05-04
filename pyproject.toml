@@ -6,7 +6,7 @@ name = "ai-circus"
 version = "0.1.1" # Follow semantic versioning (MAJOR.MINOR.PATCH)
 description = "Smart AI Building Block for innovative applications."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 license = { text = "MIT" }
 authors = [{ name = "Angel Martinez-Tenor", email = "angelmtenor@gmail.com" }]
 keywords = [
@@ -26,7 +26,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -86,7 +86,7 @@ build-backend = "hatchling.build"
 # ──────────────────────────────────────────────────────────────────────────────
 [tool.ruff]
 preview = true
-target-version = "py313"
+target-version = "py314"
 line-length = 120
 fix = true
 extend-exclude = [".venv", "build", "dist", "notebooks_extra"]
@@ -162,9 +162,9 @@ project-excludes = [
     "**/*venv/**/*",
     "**/tests",
 ]
-search-path = ["src", ".venv/lib/python3.13/site-packages"]
+search-path = ["src", ".venv/lib/python3.14/site-packages"]
 python-platform = "linux"
-python-version = "3.13"
+python-version = "3.14"
 python-interpreter-path = ".venv/bin/python3"
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -174,7 +174,7 @@ python-interpreter-path = ".venv/bin/python3"
 
 [tool.ty.environment]
 python = "./.venv"
-python-version = "3.13"
+python-version = "3.14"
 python-platform = "linux"
 root = ["."]
 extra-paths = []

@@ -55,7 +55,7 @@ def _dump_macos_keychain(output: Path) -> bool:
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(result.stdout)
             return True
-    except (subprocess.SubprocessError, FileNotFoundError):
+    except subprocess.SubprocessError, FileNotFoundError:
         pass
     return False
 
