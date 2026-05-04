@@ -5,6 +5,7 @@ This document defines the foundational mandates and operational workflows for Ge
 ## 🚨 1. Security & System Integrity (Priority Zero)
 - **Credential Protection:** NEVER log, print, or commit secrets, API keys, or sensitive credentials.
 - **Ignore Rules:** Files matching `.env*` (except `.env.example`) and the `backups/` directory MUST remain ignored in `.gitignore`. Do not modify `.gitignore` to allow these under any circumstances.
+- **AI Context Exclusions:** AI agents MUST NEVER read, analyze, or include the contents of files matching: `.env`, `.env.*` (except `.env.example`), `*.pem`, `*.key`, `**/credentials*`, `**/secrets*`, or anything in `.cache/`. This applies even if the agent has filesystem access that bypasses `.gitignore`.
 - **Pre-Commit Audit:** Before proposing a commit, you must verify that no sensitive data or temporary `.env` files are in the staged changes.
 
 ## 📚 2. Context Discovery Requirement
