@@ -33,26 +33,21 @@ classifiers = [
 
 dependencies = [
     "faiss-cpu>=1.11.0",
-    "fastmcp>=2.5.1",
-    "gitpython>=3.1.44",
     "httpx>=0.28.1",
     "langchain>=0.3.25",
     "langchain-community>=0.3.24",
     "langchain-core>=0.3.59",
     "langchain-google-genai>=2.1.4",
     "langchain-openai>=0.3.16",
-    "langchain-qdrant>=0.2.0",
     "langgraph>=0.4.3",
     "loguru>=0.7.3",
+    "openai>=1.50.0",
     "openai-agents>=0.3.3",
-    "opensearch-py>=3.1.0",
     "psutil>=7.0.0",
     "py-cpuinfo>=9.0.0",
     "pydantic>=2.11.4",
     "pydantic-settings>=2.9.1",
-    "python-dotenv>=1.1.0",
     "PyYAML>=6.0.2",
-    "qdrant-client>=1.14.2",
     "unstructured[docx,pdf,md]>=0.17.2",
 ]
 

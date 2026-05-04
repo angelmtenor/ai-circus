@@ -25,7 +25,7 @@ def test_retriever_node_uses_public_retriever_method() -> None:
         def __init__(self) -> None:
             self.calls: list[str] = []
 
-        def get_relevant_documents(self, query: str) -> list[Document]:
+        def invoke(self, query: str) -> list[Document]:
             self.calls.append(query)
             return [Document(page_content="doc-1"), Document(page_content="doc-2")]
 

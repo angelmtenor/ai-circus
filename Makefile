@@ -55,7 +55,7 @@ ssl-check: ## Detect and configure SSL CA bundle (for networks with SSL inspecti
 
 qa: ## Run all pre-commit checks (ruff, ruff-format, etc.)
 	@$(MAKE) ssl-check
-	@set -a && [ -f .env ] && . .env; uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }
+	@set -a && [ -f .env ] && . ./.env; uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }
 	@echo "✓ qa complete"
 
 test: ## Run test suite
