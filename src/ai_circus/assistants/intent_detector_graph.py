@@ -129,11 +129,11 @@ class GraphState(BaseModel):
     retrieved_documents: list[str] = []
 
 
-def process_llm_response(content: str) -> dict:
+def process_llm_response(content: Any) -> dict:
     """Parse and validate LLM JSON response.
 
     Args:
-        content (str): Raw LLM response content.
+        content (Any): Raw LLM response content (str or list of dicts).
 
     Returns:
         dict: Parsed JSON response.
@@ -141,6 +141,12 @@ def process_llm_response(content: str) -> dict:
     Raises:
         ValueError: If the response is not valid JSON.
     """
+    if isinstance(content, list):
+        text_parts = [str(c.get("text", "")) for c in content if isinstance(c, dict) and "text" in c]
+        content = "".join(text_parts)
+    elif not isinstance(content, str):
+        content = str(content)
+
     content = content.strip()
     if content.startswith("```json") and content.endswith("```"):
         content = content[7:-3].strip()
@@ -186,7 +192,7 @@ def intent_detector_node(state: GraphState) -> GraphState:
         user_input=state.user_input,
     )
     response = llm.invoke(prompt)
-    intent_output = process_llm_response(str(response.content))
+    intent_output = process_llm_response(response.content)
     validate_output(intent_output, {"intent", "reformulated_question", "new_topic"}, "intent_detector")
     if intent_output["intent"] not in ["retrieve", "no_retrieve"]:
         logger.error(f"Invalid intent: {intent_output['intent']}")
@@ -209,7 +215,7 @@ def non_retriever_response_node(state: GraphState) -> GraphState:
         conversation_history=json.dumps(state.history, indent=2), user_input=state.user_input
     )
     response = llm.invoke(prompt)
-    response_output = process_llm_response(str(response.content))
+    response_output = process_llm_response(response.content)
     validate_output(response_output, {"response", "is_within_scope"}, "non_retriever")
     state.response_output = response_output
     state.history.append({"user": state.user_input, "assistant": response_output["response"]})
@@ -259,7 +265,7 @@ def post_retriever_response_node(state: GraphState) -> GraphState:
         ),
     )
     response = llm.invoke(prompt)
-    response_output = process_llm_response(str(response.content))
+    response_output = process_llm_response(response.content)
     validate_output(response_output, {"response", "is_within_scope"}, "post_retriever")
     state.response_output = response_output
     state.history.append({"user": state.user_input, "assistant": response_output["response"]})
