@@ -22,26 +22,26 @@ SUPPORTED_EXTENSIONS: tuple[str, ...] = (".md", ".txt")
 
 logger = get_logger(__name__)
 
-# Regex patterns for stripping Markdown syntax
-_MD_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"```.*?```", re.DOTALL),  # fenced code blocks
-    re.compile(r"`[^`]+`"),  # inline code
-    re.compile(r"^#{1,6}\s+", re.MULTILINE),  # headings
-    re.compile(r"!\[.*?\]\(.*?\)"),  # images
-    re.compile(r"\[([^\]]+)\]\([^\)]+\)"),  # links → keep label
-    re.compile(r"(\*{1,2}|_{1,2})(.+?)\1"),  # bold / italic → keep text
-    re.compile(r"^[-*+]\s+", re.MULTILINE),  # unordered list markers
-    re.compile(r"^\d+\.\s+", re.MULTILINE),  # ordered list markers
-    re.compile(r"^>\s+", re.MULTILINE),  # blockquotes
-    re.compile(r"^-{3,}$", re.MULTILINE),  # horizontal rules
-    re.compile(r"\|.*?\|", re.MULTILINE),  # table rows
+# Each entry is (compiled_pattern, replacement_string)
+_MD_PATTERNS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"```.*?```", re.DOTALL), " "),  # fenced code blocks
+    (re.compile(r"`[^`]+`"), " "),  # inline code
+    (re.compile(r"^#{1,6}\s+", re.MULTILINE), ""),  # headings
+    (re.compile(r"!\[.*?\]\(.*?\)"), " "),  # images
+    (re.compile(r"\[([^\]]+)\]\([^)]+\)"), r"\1"),  # links → keep label (1 group)
+    (re.compile(r"(\*{1,2}|_{1,2})(.+?)\1"), r"\2"),  # bold/italic → keep text (2 groups)
+    (re.compile(r"^[-*+]\s+", re.MULTILINE), ""),  # unordered list markers
+    (re.compile(r"^\d+\.\s+", re.MULTILINE), ""),  # ordered list markers
+    (re.compile(r"^>\s+", re.MULTILINE), ""),  # blockquotes
+    (re.compile(r"^-{3,}$", re.MULTILINE), " "),  # horizontal rules
+    (re.compile(r"\|.*?\|", re.MULTILINE), " "),  # table rows
 ]
 
 
 def _strip_markdown(text: str) -> str:
     """Remove Markdown syntax, leaving plain readable text."""
-    for pattern in _MD_PATTERNS:
-        text = pattern.sub(r"\2" if pattern.groups else " ", text)
+    for pattern, replacement in _MD_PATTERNS:
+        text = pattern.sub(replacement, text)
     return text
 
 
