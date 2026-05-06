@@ -12,7 +12,7 @@ endif
 CYAN  := $(shell tput setaf 6 2>/dev/null)
 RESET := $(shell tput sgr0 2>/dev/null)
 
-.PHONY: help setup install check update qa ssl-check test unused-packages all build clean zip spacy-models generate run ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model ai-app
+.PHONY: help setup install check update qa ssl-check test unused-packages all build clean zip spacy-models generate run ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model ai-app run-container build-container build-container-clean
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -71,6 +71,15 @@ all: clean setup check run ## Full end-to-end verification: clean, setup, check,
 build: ## Build the package
 	@uv build || { echo "❌ build failed."; exit 1; }
 	@echo "✓ build complete"
+
+build-container: ## Build the Docker image (uses layer cache)
+	@DOCKER_BUILDKIT=1 docker build -t ai-circus .
+
+build-container-clean: ## Force full rebuild of Docker image (no cache)
+	@DOCKER_BUILDKIT=1 docker build --no-cache -t ai-circus .
+
+run-container: build-container ## Build (cached) and run the Docker container
+	@[ -f .env ] && docker run --rm -it --env-file .env ai-circus || docker run --rm -it ai-circus
 
 clean: ## Remove build artifacts, caches, and .venv (with .env backup)
 	@uv run python scripts/clean.py

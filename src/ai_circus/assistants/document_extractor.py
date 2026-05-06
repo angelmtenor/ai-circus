@@ -1,32 +1,52 @@
 """
-Document extraction module for the AI Circus project using the unstructured package.
+Document extraction module for the AI Circus project.
 Author: Angel Martinez-Tenor, 2026.
 
-Dependencies:
-- unstructured[pdf,docx] (install with `uv add "unstructured[pdf,docx]"`)
-- langchain-core (install with `uv add langchain-core`)
+Minimalist text extraction for plain-text formats (.md, .txt).
+No heavy OCR or CV dependencies required — uses stdlib only.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from langchain_core.documents import Document
-from unstructured.partition.auto import partition
 
 from ai_circus.core.logger import get_logger
 
 # Module-level constants
 CHUNK_SIZE: int = 5000  # Maximum characters per chunk
 CHUNK_OVERLAP: int = 100  # Overlapping characters between chunks
-OCR_LANGUAGES: tuple[str, ...] = ("eng",)  # Languages for OCR
-SUPPORTED_EXTENSIONS: tuple[str, ...] = (".pdf", ".docx", ".md", ".txt")
+SUPPORTED_EXTENSIONS: tuple[str, ...] = (".md", ".txt")
 
 logger = get_logger(__name__)
 
+# Regex patterns for stripping Markdown syntax
+_MD_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(r"```.*?```", re.DOTALL),  # fenced code blocks
+    re.compile(r"`[^`]+`"),  # inline code
+    re.compile(r"^#{1,6}\s+", re.MULTILINE),  # headings
+    re.compile(r"!\[.*?\]\(.*?\)"),  # images
+    re.compile(r"\[([^\]]+)\]\([^\)]+\)"),  # links → keep label
+    re.compile(r"(\*{1,2}|_{1,2})(.+?)\1"),  # bold / italic → keep text
+    re.compile(r"^[-*+]\s+", re.MULTILINE),  # unordered list markers
+    re.compile(r"^\d+\.\s+", re.MULTILINE),  # ordered list markers
+    re.compile(r"^>\s+", re.MULTILINE),  # blockquotes
+    re.compile(r"^-{3,}$", re.MULTILINE),  # horizontal rules
+    re.compile(r"\|.*?\|", re.MULTILINE),  # table rows
+]
+
+
+def _strip_markdown(text: str) -> str:
+    """Remove Markdown syntax, leaving plain readable text."""
+    for pattern in _MD_PATTERNS:
+        text = pattern.sub(r"\2" if pattern.groups else " ", text)
+    return text
+
 
 class DocumentExtractor:
-    """Class for extracting and chunking text from various document formats using unstructured."""
+    """Minimalist text extractor for .md and .txt files using stdlib only."""
 
     def _chunk_text(self, text: str, chunk_size: int, chunk_overlap: int) -> list[str]:
         """
@@ -44,13 +64,13 @@ class DocumentExtractor:
             logger.error(f"Invalid chunk parameters: size={chunk_size}, overlap={chunk_overlap}")
             raise ValueError("Chunk size must be positive, and overlap must be non-negative and less than chunk size")
 
-        chunks = []
+        chunks: list[str] = []
         start = 0
         text = " ".join(text.split())  # Normalize whitespace
         while start < len(text):
             end = min(start + chunk_size, len(text))
             chunk = text[start:end]
-            if chunk.strip():  # Only include non-empty chunks
+            if chunk.strip():
                 chunks.append(chunk)
             start += chunk_size - chunk_overlap
         return chunks
@@ -60,20 +80,16 @@ class DocumentExtractor:
         file_path: str,
         chunk_size: int | None = None,
         chunk_overlap: int | None = None,
-        strategy: str | None = None,
-        languages: list[str] | None = None,
-        include_metadata: bool = True,
+        **kwargs: object,  # absorbs legacy strategy/languages args gracefully
     ) -> list[Document]:
         """
-        Extract text from a document file and chunk it into smaller pieces.
+        Extract and chunk text from a .md or .txt file.
 
         Args:
             file_path (str): Path to the document file.
             chunk_size (int, optional): Maximum characters per chunk. Defaults to CHUNK_SIZE.
             chunk_overlap (int, optional): Overlapping characters between chunks. Defaults to CHUNK_OVERLAP.
-            strategy (str, optional): Partitioning strategy. Defaults to "auto".
-            languages (list[str], optional): List of languages for OCR. Defaults to OCR_LANGUAGES.
-            include_metadata (bool, optional): Whether to include metadata in Document objects. Defaults to True.
+            **kwargs: Ignored; kept for backwards-compatibility with callers that pass strategy/languages.
 
         Returns:
             list[Document]: List of Document objects containing the extracted text and metadata.
@@ -84,60 +100,41 @@ class DocumentExtractor:
             raise FileNotFoundError(f"File not found: {file_path}")
         ext = path.suffix.lower()
         if ext not in SUPPORTED_EXTENSIONS:
-            logger.error(f"Unsupported file type: {ext}")
+            logger.error(f"Unsupported file type: {ext}. Supported: {SUPPORTED_EXTENSIONS}")
             raise ValueError(f"Unsupported file type: {ext}")
 
         chunk_size = chunk_size if chunk_size is not None else CHUNK_SIZE
         chunk_overlap = chunk_overlap if chunk_overlap is not None else CHUNK_OVERLAP
-        strategy = strategy if strategy is not None else "auto"
-        languages = languages if languages is not None else list(OCR_LANGUAGES)
 
         try:
-            logger.info(f"Extracting text from {file_path} with strategy={strategy}, languages={languages}")
-            elements = partition(str(path), strategy=strategy, languages=languages)
-            logger.debug(f"Extracted {len(elements)} elements from {file_path}")
+            logger.info(f"Extracting text from {file_path}")
+            raw = path.read_text(encoding="utf-8", errors="replace")
+            text = _strip_markdown(raw) if ext == ".md" else raw
+            logger.debug(f"Extracted {len(text)} characters from {file_path}")
 
-            # Combine all element texts into one string
-            full_text = " ".join(element.text for element in elements if hasattr(element, "text") and element.text)
-            logger.debug(f"Combined text length: {len(full_text)} characters")
+            chunks = self._chunk_text(text, chunk_size, chunk_overlap)
+            base_metadata: dict[str, str] = {"source": file_path}
 
-            # Chunk the combined text
-            chunks = self._chunk_text(full_text, chunk_size, chunk_overlap)
-
-            # Create Document objects
-            documents = []
-            base_metadata = {"source": file_path}
-            # Include metadata from the first element (or aggregate as needed)
-            if include_metadata and elements and hasattr(elements[0], "metadata"):
-                base_metadata.update(elements[0].metadata.to_dict())
-
-            for i, chunk in enumerate(chunks):
-                metadata = base_metadata.copy()
-                metadata["chunk_index"] = str(i)
-                metadata["total_chunks"] = str(len(chunks))
-                documents.append(Document(page_content=chunk, metadata=metadata))
-
+            documents = [
+                Document(
+                    page_content=chunk,
+                    metadata={**base_metadata, "chunk_index": str(i), "total_chunks": str(len(chunks))},
+                )
+                for i, chunk in enumerate(chunks)
+            ]
             logger.info(f"Extracted and chunked {len(documents)} Document objects from {file_path}")
             return documents
 
-        except Exception as e:
-            logger.error(f"Error extracting text from {file_path}: {e}")
+        except (OSError, UnicodeDecodeError) as e:
+            logger.error(f"Error reading {file_path}: {e}")
             raise ValueError(f"Failed to extract text: {e}") from e
 
 
 if __name__ == "__main__":
-    # Example usage for testing
     extractor = DocumentExtractor()
-    sample_file = "scenarios/python_development/documents/15_software_engineering_principles.docx"
+    sample_file = "scenarios/python_development/documents/15_software_engineering_principles.md"
     try:
-        documents = extractor.extract_text(
-            sample_file,
-            chunk_size=CHUNK_SIZE,
-            chunk_overlap=CHUNK_OVERLAP,
-            strategy="fast",
-            languages=["eng"],
-            include_metadata=True,
-        )
+        documents = extractor.extract_text(sample_file, chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
         logger.info(f"Extracted {len(documents)} Document objects")
         for i, doc in enumerate(documents[:5]):
             logger.info(f"Document {i + 1}:")
