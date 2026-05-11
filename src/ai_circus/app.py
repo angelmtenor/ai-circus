@@ -33,7 +33,10 @@ def main() -> None:
             logger.error("  {}: {}", " -> ".join(str(loc) for loc in error["loc"]), error["msg"])
         sys.exit(1)
 
-    logger.info("--- Initializing Application Settings ---")
+    import os
+
+    current_env = os.getenv("APP_ENV", "local")
+    logger.info("--- Initializing Application Settings (ENV: {}) ---", current_env)
     # Redaction logic consistent with setup scripts
     for field_name in config.model_fields:
         val = getattr(config, field_name)

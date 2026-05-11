@@ -1,7 +1,7 @@
 """
 data_model.py
 -----------
-Generated Pydantic Settings model from env_config.yaml.
+Generated Pydantic Settings model from settings.yaml.
 DO NOT EDIT DIRECTLY. Run 'make generate' to update.
 
 Author: Angel Martinez-Tenor, 2026.
@@ -9,10 +9,13 @@ Author: Angel Martinez-Tenor, 2026.
 
 from __future__ import annotations
 
+import os
 import re
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
+import yaml
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -84,16 +87,40 @@ class EnvConfig(BaseSettings):
         return v
 
 
-_SOURCE_YAML_HASH = "38436a69f460851a82fd6321238f167482739e1adcf8785f6716881e8ab530d4"
+_SOURCE_YAML_HASH = "0a894183bb415b39470ba5b2b576c05eb69a5ac05a2e162c3cb2ff91961f5a18"
 
 
 EnvConfig.model_rebuild()
 
 
-@lru_cache(maxsize=1)
-def get_env_config() -> EnvConfig:
-    """Return the validated environment configuration."""
-    return EnvConfig()
+def _load_env_overrides(env: str) -> dict[str, Any]:
+    """Load per-environment non-secret defaults from settings.yaml.
+
+    Merges the base non-secret defaults with the profile-specific
+    overrides defined under ``environments.<env>`` in settings.yaml.
+    """
+    config_path = Path(__file__).parent.parent.parent / "settings.yaml"
+    with config_path.open(encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    base: dict[str, Any] = {}
+    for v in data.get("env_variables", []):
+        if v.get("default") is not None and not v.get("secret", False):
+            base[v["name"]] = v["default"]
+    base.update(data.get("environments", {}).get(env, {}))
+    return base
+
+
+@lru_cache(maxsize=4)
+def get_env_config(env: str | None = None) -> EnvConfig:
+    """Return the validated environment configuration for the given profile.
+
+    The active profile is resolved from the *env* argument, then the
+    ``APP_ENV`` environment variable, defaulting to ``"local"``.
+    Valid profiles: local, fucci, ministack.
+    """
+    active_env = env or os.getenv("APP_ENV", "local")
+    overrides = _load_env_overrides(active_env)
+    return EnvConfig(**overrides)
 
 
 def main() -> None:

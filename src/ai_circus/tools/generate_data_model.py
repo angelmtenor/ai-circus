@@ -2,7 +2,7 @@
 generate_data_model.py
 ----------------------
 
-Utility to generate a Pydantic Settings model from env_config.yaml.
+Utility to generate a Pydantic Settings model from settings.yaml.
 Automates the synchronization of environment variable definitions
 with the application's data model and .env.example file.
 
@@ -19,7 +19,7 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
-DEFAULT_CONFIG = "env_config.yaml"
+DEFAULT_CONFIG = "settings.yaml"
 DEFAULT_OUTPUT = "src/ai_circus/data_model.py"
 DEFAULT_ENV_EXAMPLE = ".env.example"
 
@@ -67,7 +67,7 @@ def generate_data_model(
         '"""',
         "data_model.py",
         "-----------",
-        "Generated Pydantic Settings model from env_config.yaml.",
+        "Generated Pydantic Settings model from settings.yaml.",
         "DO NOT EDIT DIRECTLY. Run 'make generate' to update.",
         "",
         "Author: Angel Martinez-Tenor, 2026.",
@@ -75,10 +75,13 @@ def generate_data_model(
         "",
         "from __future__ import annotations",
         "",
+        "import os",
         "import re",
         "from functools import lru_cache",
+        "from pathlib import Path",
         "from typing import Any",
         "",
+        "import yaml",
         "from pydantic import Field, SecretStr, field_validator",
         "from pydantic_settings import BaseSettings, SettingsConfigDict",
         "",
@@ -162,10 +165,34 @@ def generate_data_model(
         "EnvConfig.model_rebuild()",
         "",
         "",
-        "@lru_cache(maxsize=1)",
-        "def get_env_config() -> EnvConfig:",
-        '    """Return the validated environment configuration."""',
-        "    return EnvConfig()",
+        "def _load_env_overrides(env: str) -> dict[str, Any]:",
+        '    """Load per-environment non-secret defaults from settings.yaml.',
+        "",
+        "    Merges the base non-secret defaults with the profile-specific",
+        "    overrides defined under ``environments.<env>`` in settings.yaml.",
+        '    """',
+        '    config_path = Path(__file__).parent.parent.parent / "settings.yaml"',
+        '    with config_path.open(encoding="utf-8") as f:',
+        "        data = yaml.safe_load(f)",
+        "    base: dict[str, Any] = {}",
+        '    for v in data.get("env_variables", []):',
+        '        if v.get("default") is not None and not v.get("secret", False):',
+        '            base[v["name"]] = v["default"]',
+        '    base.update(data.get("environments", {}).get(env, {}))',
+        "    return base",
+        "",
+        "",
+        "@lru_cache(maxsize=4)",
+        "def get_env_config(env: str | None = None) -> EnvConfig:",
+        '    """Return the validated environment configuration for the given profile.',
+        "",
+        "    The active profile is resolved from the *env* argument, then the",
+        '    ``APP_ENV`` environment variable, defaulting to ``"local"``.',
+        "    Valid profiles: local, fucci, ministack.",
+        '    """',
+        '    active_env = env or os.getenv("APP_ENV", "local")',
+        "    overrides = _load_env_overrides(active_env)",
+        "    return EnvConfig(**overrides)",
         "",
         "",
         "def main() -> None:",
@@ -195,7 +222,7 @@ def generate_data_model(
 def main() -> None:
     """Entry point for the generator tool."""
     parser = argparse.ArgumentParser(description="Generate Pydantic model from YAML.")
-    parser.add_argument("--config", default=DEFAULT_CONFIG, help="Path to env_config.yaml")
+    parser.add_argument("--config", default=DEFAULT_CONFIG, help="Path to settings.yaml")
     parser.add_argument("--output", default=DEFAULT_OUTPUT, help="Output path for data_model.py")
     parser.add_argument("--env-example", default=DEFAULT_ENV_EXAMPLE, help="Output path for .env.example")
     args = parser.parse_args()
@@ -204,7 +231,7 @@ def main() -> None:
 
 
 def check_env_drift() -> None:
-    """Verify that data_model.py is in sync with env_config.yaml."""
+    """Verify that data_model.py is in sync with settings.yaml."""
     config_path = Path(DEFAULT_CONFIG)
     output_path = Path(DEFAULT_OUTPUT)
 
@@ -227,14 +254,14 @@ def check_env_drift() -> None:
     embedded_hash = match.group(1)
     if current_hash != embedded_hash:
         logger.error(
-            "Drift detected! env_config.yaml has changed since last 'make generate'.\n"
+            "Drift detected! settings.yaml has changed since last 'make generate'.\n"
             "  Expected: {}\n  Current:  {}\n  Fix: run 'make generate'",
             embedded_hash[:12],
             current_hash[:12],
         )
         raise SystemExit(1)
 
-    logger.info("✓ data_model.py is in sync with env_config.yaml")
+    logger.info("✓ data_model.py is in sync with settings.yaml")
 
 
 if __name__ == "__main__":

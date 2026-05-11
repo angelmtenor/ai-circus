@@ -3,9 +3,9 @@
 This document outlines the specific domain knowledge, coding conventions, and architectural patterns required for the `ai_circus` Python project. Agents must adhere to these standards when writing or refactoring code.
 
 ## 1. Configuration & State Management
-**Single Source of Truth:** All application settings MUST be defined in `env_config.yaml`.
+**Single Source of Truth:** All application settings MUST be defined in `settings.yaml`.
 - **Synchronization Workflow:** When you need to add or change a configuration setting:
-  1. Update `env_config.yaml`.
+  1. Update `settings.yaml`.
   2. Run `make generate` to sync `src/ai_circus/data_model.py` and `.env.example`.
 - **Prohibition:** NEVER define redundant `Settings` classes or load `.env` files manually using `dotenv` for core app logic.
   - **✅ Good:** `config = ai_circus.get_env_config()`

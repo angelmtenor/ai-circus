@@ -1,6 +1,8 @@
+# settings.yaml
 # Configuration file for environment variables required by the application
 # Author: Angel Martinez-Tenor, 2026.
-# Defines variable names, descriptions, types, constraints, and validation rules
+# Defines variable names, descriptions, types, constraints, and validation rules.
+# Run 'make generate' after any change to sync data_model.py and .env.example.
 
 env_variables:
   - name: LLM_PROVIDER
@@ -63,6 +65,30 @@ env_variables:
 
 # Optional global settings
 global_settings:
-  env_file: ".env"  # Default location for environment variable file
-  fail_on_missing: true  # Stop execution if mandatory variables are missing
-  case_sensitive: true  # Enforce case sensitivity for variable names
+  env_file: ".env"          # Default location for environment variable file
+  fail_on_missing: true     # Stop execution if mandatory variables are missing
+  case_sensitive: true      # Enforce case sensitivity for variable names
+
+# Per-environment non-secret overrides.
+# Secrets MUST never appear here — use .env (local) or Jenkins injection (cloud).
+# APP_ENV selects the active profile (default: local).
+environments:
+  local:
+    LLM_PROVIDER: "google"
+    GEMINI_MODEL: "gemini-3-flash-preview"
+    OPENAI_MODEL: "gpt-5.4-mini"
+    LLM_LANGUAGES: "English"
+
+  fucci:
+    # Fucci cluster profile — to be configured
+    LLM_PROVIDER: "google"
+    GEMINI_MODEL: "gemini-3-flash-preview"
+    OPENAI_MODEL: "gpt-5.4-mini"
+    LLM_LANGUAGES: "English"
+
+  ministack:
+    # Ministack cluster profile — to be configured
+    LLM_PROVIDER: "google"
+    GEMINI_MODEL: "gemini-3-flash-preview"
+    OPENAI_MODEL: "gpt-5.4-mini"
+    LLM_LANGUAGES: "English"

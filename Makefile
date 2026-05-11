@@ -47,7 +47,7 @@ update: ## Upgrade lockfile, sync deps & update pre-commit hooks
 
 # ── Dev workflow ──────────────────────────────────────────────────────────────
 
-generate: ## Generate Pydantic data model from env_config.yaml
+generate: ## Generate Pydantic data model from settings.yaml
 	@uv run ai-generate-data-model && uv run ruff format src/ai_circus/data_model.py
 
 ssl-check: ## Detect and configure SSL CA bundle (for networks with SSL inspection)

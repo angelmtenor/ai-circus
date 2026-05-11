@@ -14,8 +14,8 @@ Before deploying ai-circus services to production, verify every item below:
 
 ### Configuration
 
-- [ ] `env_config.yaml` ↔ `data_model.py` are in sync (run `uv run ai-env-check`)
-- [ ] All mandatory fields have regex validation in `env_config.yaml`
+- [ ] `settings.yaml` ↔ `data_model.py` are in sync (run `uv run ai-env-check`)
+- [ ] All mandatory fields have regex validation in `settings.yaml`
 - [ ] `fail_on_missing: true` in global settings (app fails fast on missing vars)
 
 ### API & Network

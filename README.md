@@ -32,7 +32,7 @@ make all      # clean -> setup -> check -> run
 This project is under active development. Features and APIs are subject to change.
 
 Implemented:
-- Centralized Pydantic configuration (`env_config.yaml`)
+- Centralized Pydantic configuration (`settings.yaml`)
 - Validated environment setup (`make setup`)
 - Simplified LLM/Embedding initialization (`ai_circus.get_llm`)
 
@@ -55,7 +55,7 @@ Planned:
 
 ## Configuration
 
-The project uses a single source of truth for settings defined in `env_config.yaml`.
+The project uses a single source of truth for settings defined in `settings.yaml`.
 
 1. Run `make setup` to initialize your `.env` file from `.env.example`.
 2. Edit `.env` to fill in your `OPENAI_API_KEY` and other optional keys.
