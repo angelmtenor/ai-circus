@@ -25,8 +25,8 @@ help: ## Show this help message
 setup: ## Complete setup: venv, .env, generate settings, and verify environment
 	@echo "🚀 Starting complete setup..."
 	@if [ ! -f .env ] && [ -f .env.example ]; then echo "📝 Creating .env from .env.example..."; cp .env.example .env; fi
-	@uv sync --extra optional && uv run pre-commit install && uv run python -m spacy download en_core_web_sm || { echo "❌ setup failed"; exit 1; }
-	@$(MAKE) generate && uv run python check_full_env.py || { echo "⚠️  Environment check found issues."; }
+	@uv sync --extra optional && uv run pre-commit install || { echo "❌ setup failed"; exit 1; }
+	@$(MAKE) spacy-models; $(MAKE) generate && uv run python check_full_env.py || { echo "⚠️  Environment check found issues."; }
 	@echo "✓ Complete setup finished!"
 
 install: ## Sync deps, install pre-commit hooks, and download spaCy models (run after cloning)
@@ -82,7 +82,7 @@ run-container: build-container ## Build (cached) and run the Docker container
 	@[ -f .env ] && docker run --rm -it --env-file .env ai-circus || docker run --rm -it ai-circus
 
 clean: ## Remove build artifacts, caches, and .venv (with .env backup)
-	@uv run python scripts/clean.py
+	@python3 scripts/clean.py
 
 zip: ## Zip git-tracked files into project.zip
 	@git archive --format=zip --output=project.zip HEAD || { echo "❌ zip failed."; exit 1; }

@@ -2,19 +2,22 @@
 """
 Cleanup script for ai_circus.
 Author: Angel Martinez-Tenor, 2026
+
+NOTE: This script intentionally uses only stdlib — no project imports — so it
+works even when .venv is absent or broken.
 """
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 
-from ai_circus.core.logger import get_logger
-
-logger = get_logger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
 
 def backup_env() -> None:
