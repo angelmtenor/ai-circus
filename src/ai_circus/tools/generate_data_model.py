@@ -144,6 +144,8 @@ def generate_data_model(
                 "        if v is None:",
                 "            return v",
                 "        val = v.get_secret_value() if hasattr(v, 'get_secret_value') else str(v)",
+                "        if not val:",
+                "            return None",
                 f'        if not re.match(r"{regex}", val):',
                 "            raise ValueError(",
                 f'                "{err}"',

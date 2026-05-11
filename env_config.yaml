@@ -27,7 +27,7 @@ env_variables:
   - name: OPENAI_API_KEY
     description: API key for accessing OpenAI services for AI-related functionalities
     type: string
-    mandatory: true
+    mandatory: false
     secret: true
     default: null
     validation:

@@ -29,8 +29,8 @@ class EnvConfig(BaseSettings):
     LLM_PROVIDER: str = Field(description="Default LLM provider to use (openai or google)", default="google")
     OPENAI_MODEL: str = Field(description="Default OpenAI model to use", default="gpt-5.4-mini")
     GEMINI_MODEL: str = Field(description="Default Google/Gemini model to use", default="gemini-3-flash-preview")
-    OPENAI_API_KEY: SecretStr = Field(
-        description="API key for accessing OpenAI services for AI-related functionalities"
+    OPENAI_API_KEY: SecretStr | None = Field(
+        description="API key for accessing OpenAI services for AI-related functionalities", default=None
     )
     GEMINI_API_KEY: SecretStr | None = Field(
         description="API key for accessing Google services (e.g., Maps, Cloud)", default=None
@@ -47,6 +47,8 @@ class EnvConfig(BaseSettings):
         if v is None:
             return v
         val = v.get_secret_value() if hasattr(v, "get_secret_value") else str(v)
+        if not val:
+            return None
         if not re.match(r"^sk-[A-Za-z0-9_-]{20,}$", val):
             raise ValueError(
                 "Invalid OpenAI API key format. Expected an OpenAI key starting with sk- and at least 20 characters."
@@ -60,6 +62,8 @@ class EnvConfig(BaseSettings):
         if v is None:
             return v
         val = v.get_secret_value() if hasattr(v, "get_secret_value") else str(v)
+        if not val:
+            return None
         if not re.match(r"^[a-zA-Z0-9-_]{39}$", val):
             raise ValueError(
                 "Invalid Google API key format. Expected a 39-character string with alphanumeric and hyphen/underscore."
@@ -73,12 +77,14 @@ class EnvConfig(BaseSettings):
         if v is None:
             return v
         val = v.get_secret_value() if hasattr(v, "get_secret_value") else str(v)
+        if not val:
+            return None
         if not re.match(r"^[a-zA-Z0-9_-]{16,}$", val):
             raise ValueError("Invalid Tavily API key format. Expected at least 16 alphanumeric characters.")
         return v
 
 
-_SOURCE_YAML_HASH = "60bd37c1bde91e1a1c3c47c02d662b8b1bb09e7dff16bd2333a94bad372d1262"
+_SOURCE_YAML_HASH = "38436a69f460851a82fd6321238f167482739e1adcf8785f6716881e8ab530d4"
 
 
 EnvConfig.model_rebuild()
