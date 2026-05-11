@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import re
 from pathlib import Path
+from typing import Any
 
 import yaml
 from loguru import logger
@@ -24,23 +25,21 @@ DEFAULT_OUTPUT = "src/ai_circus/data_model.py"
 DEFAULT_ENV_EXAMPLE = ".env.example"
 
 
-def update_env_example(config: dict, output_path: str | Path) -> None:
-    """Generate or update .env.example from config."""
-    lines = []
+def update_env_example(config: dict[str, Any], output_path: str | Path) -> None:
+    """Generate or update .env.example from config (secrets only)."""
+    lines = ["# Active Environment Profile (local, fucci, ministack)", "APP_ENVIRONMENT=local", ""]
 
     for var in config.get("env_variables", []):
+        if not var.get("secret", False):
+            continue
+
         name = var["name"]
         description = var.get("description", "")
-        default = var.get("default")
 
         if description:
             lines.append(f"# {description}")
 
-        val_str = ""
-        if default is not None:
-            val_str = str(default)
-
-        lines.append(f"{name}={val_str}")
+        lines.append(f"{name}=")
         lines.append("")
 
     with open(output_path, "w", encoding="utf-8") as f:
@@ -174,10 +173,7 @@ def generate_data_model(
         '    config_path = Path(__file__).parent.parent.parent / "settings.yaml"',
         '    with config_path.open(encoding="utf-8") as f:',
         "        data = yaml.safe_load(f)",
-        "    base: dict[str, Any] = {}",
-        '    for v in data.get("env_variables", []):',
-        '        if v.get("default") is not None and not v.get("secret", False):',
-        '            base[v["name"]] = v["default"]',
+        '    base: dict[str, Any] = data.get("environments", {}).get("base", {}).copy()',
         '    base.update(data.get("environments", {}).get(env, {}))',
         "    return base",
         "",
@@ -187,10 +183,10 @@ def generate_data_model(
         '    """Return the validated environment configuration for the given profile.',
         "",
         "    The active profile is resolved from the *env* argument, then the",
-        '    ``APP_ENV`` environment variable, defaulting to ``"local"``.',
+        '    ``APP_ENVIRONMENT`` environment variable, defaulting to ``"local"``.',
         "    Valid profiles: local, fucci, ministack.",
         '    """',
-        '    active_env = env or os.getenv("APP_ENV", "local")',
+        '    active_env = env or os.getenv("APP_ENVIRONMENT", "local")',
         "    overrides = _load_env_overrides(active_env)",
         "    return EnvConfig(**overrides)",
         "",

@@ -35,7 +35,7 @@ def main() -> None:
 
     import os
 
-    current_env = os.getenv("APP_ENV", "local")
+    current_env = os.getenv("APP_ENVIRONMENT", "local")
     logger.info("--- Initializing Application Settings (ENV: {}) ---", current_env)
     # Redaction logic consistent with setup scripts
     for field_name in config.model_fields:

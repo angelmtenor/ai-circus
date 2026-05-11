@@ -10,28 +10,24 @@ env_variables:
     type: string
     mandatory: true
     secret: false
-    default: "google"
 
   - name: OPENAI_MODEL
     description: "Default OpenAI model to use"
     type: string
     mandatory: true
     secret: false
-    default: "gpt-5.4-mini"
 
   - name: GEMINI_MODEL
     description: "Default Google/Gemini model to use"
     type: string
     mandatory: true
     secret: false
-    default: "gemini-3-flash-preview"
 
   - name: OPENAI_API_KEY
     description: API key for accessing OpenAI services for AI-related functionalities
     type: string
     mandatory: false
     secret: true
-    default: null
     validation:
       regex: ^sk-[A-Za-z0-9_-]{20,}$  # Basic pattern for OpenAI API key (starts with sk- and may include alphanumeric, hyphen, underscore)
       error_message: "Invalid OpenAI API key format. Expected an OpenAI key starting with sk- and at least 20 characters."
@@ -41,7 +37,6 @@ env_variables:
     type: string
     mandatory: false
     secret: true
-    default: null
     validation:
       regex: ^[a-zA-Z0-9-_]{39}$  # Typical Google API key length and format
       error_message: "Invalid Google API key format. Expected a 39-character string with alphanumeric and hyphen/underscore."
@@ -51,7 +46,6 @@ env_variables:
     type: string
     mandatory: false
     secret: true
-    default: null
     validation:
       regex: ^[a-zA-Z0-9_-]{16,}$  # At least 16 characters, alphanumeric, hyphen, or underscore
       error_message: "Invalid Tavily API key format. Expected at least 16 alphanumeric characters."
@@ -61,7 +55,6 @@ env_variables:
     type: string
     mandatory: true
     secret: false
-    default: "English"
 
 # Optional global settings
 global_settings:
@@ -71,24 +64,19 @@ global_settings:
 
 # Per-environment non-secret overrides.
 # Secrets MUST never appear here — use .env (local) or Jenkins injection (cloud).
-# APP_ENV selects the active profile (default: local).
+# APP_ENVIRONMENT selects the active profile (default: local).
 environments:
-  local:
+  base:
     LLM_PROVIDER: "google"
     GEMINI_MODEL: "gemini-3-flash-preview"
     OPENAI_MODEL: "gpt-5.4-mini"
     LLM_LANGUAGES: "English"
 
-  fucci:
-    # Fucci cluster profile — to be configured
-    LLM_PROVIDER: "google"
-    GEMINI_MODEL: "gemini-3-flash-preview"
-    OPENAI_MODEL: "gpt-5.4-mini"
-    LLM_LANGUAGES: "English"
+  local: {}
+    # Local development overrides
 
-  ministack:
-    # Ministack cluster profile — to be configured
-    LLM_PROVIDER: "google"
-    GEMINI_MODEL: "gemini-3-flash-preview"
-    OPENAI_MODEL: "gpt-5.4-mini"
-    LLM_LANGUAGES: "English"
+  fucci: {}
+    # Fucci cluster profile — overrides go here
+
+  ministack: {}
+    # Ministack cluster profile — overrides go here

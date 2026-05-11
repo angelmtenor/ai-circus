@@ -29,9 +29,9 @@ class EnvConfig(BaseSettings):
         extra="ignore",
         case_sensitive=True,
     )
-    LLM_PROVIDER: str = Field(description="Default LLM provider to use (openai or google)", default="google")
-    OPENAI_MODEL: str = Field(description="Default OpenAI model to use", default="gpt-5.4-mini")
-    GEMINI_MODEL: str = Field(description="Default Google/Gemini model to use", default="gemini-3-flash-preview")
+    LLM_PROVIDER: str = Field(description="Default LLM provider to use (openai or google)")
+    OPENAI_MODEL: str = Field(description="Default OpenAI model to use")
+    GEMINI_MODEL: str = Field(description="Default Google/Gemini model to use")
     OPENAI_API_KEY: SecretStr | None = Field(
         description="API key for accessing OpenAI services for AI-related functionalities", default=None
     )
@@ -41,7 +41,7 @@ class EnvConfig(BaseSettings):
     TAVILY_API_KEY: SecretStr | None = Field(
         description="API key for accessing Tavily services (e.g., data aggregation)", default=None
     )
-    LLM_LANGUAGES: str = Field(description="Language for the LLM responses", default="English")
+    LLM_LANGUAGES: str = Field(description="Language for the LLM responses")
 
     @field_validator("OPENAI_API_KEY", mode="after")
     @classmethod
@@ -87,7 +87,7 @@ class EnvConfig(BaseSettings):
         return v
 
 
-_SOURCE_YAML_HASH = "0a894183bb415b39470ba5b2b576c05eb69a5ac05a2e162c3cb2ff91961f5a18"
+_SOURCE_YAML_HASH = "26d8f38b777d89eb78f1caf9d80742de9d1cd1df240bd46e91e418d7cbdf5689"
 
 
 EnvConfig.model_rebuild()
@@ -102,10 +102,7 @@ def _load_env_overrides(env: str) -> dict[str, Any]:
     config_path = Path(__file__).parent.parent.parent / "settings.yaml"
     with config_path.open(encoding="utf-8") as f:
         data = yaml.safe_load(f)
-    base: dict[str, Any] = {}
-    for v in data.get("env_variables", []):
-        if v.get("default") is not None and not v.get("secret", False):
-            base[v["name"]] = v["default"]
+    base: dict[str, Any] = data.get("environments", {}).get("base", {}).copy()
     base.update(data.get("environments", {}).get(env, {}))
     return base
 
@@ -115,10 +112,10 @@ def get_env_config(env: str | None = None) -> EnvConfig:
     """Return the validated environment configuration for the given profile.
 
     The active profile is resolved from the *env* argument, then the
-    ``APP_ENV`` environment variable, defaulting to ``"local"``.
+    ``APP_ENVIRONMENT`` environment variable, defaulting to ``"local"``.
     Valid profiles: local, fucci, ministack.
     """
-    active_env = env or os.getenv("APP_ENV", "local")
+    active_env = env or os.getenv("APP_ENVIRONMENT", "local")
     overrides = _load_env_overrides(active_env)
     return EnvConfig(**overrides)
 
