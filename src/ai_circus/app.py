@@ -36,14 +36,16 @@ def main() -> None:
     import os
 
     current_env = os.getenv("APP_ENVIRONMENT", "local")
-    logger.info("--- Initializing Application Settings (ENV: {}) ---", current_env)
+    lines = [f"--- Initializing Application Settings (ENV: {current_env}) ---"]
     # Redaction logic consistent with setup scripts
     for field_name in config.model_fields:
         val = getattr(config, field_name)
         if hasattr(val, "get_secret_value"):
             secret_val = val.get_secret_value()
             val = "****" + secret_val[-4:] if secret_val else "None"
-        logger.info("{}: {}", field_name, val)
+        lines.append(f"  {field_name}: {val}")
+
+    logger.info("\n" + "\n".join(lines))
 
     language = config.LLM_LANGUAGES
     logger.info("Starting Hello World LLM call in {}", language)

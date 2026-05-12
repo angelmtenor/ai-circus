@@ -25,14 +25,14 @@ help: ## Show this help message
 setup: ## Complete setup: venv, .env, generate settings, and verify environment
 	@echo "🚀 Starting complete setup..."
 	@if [ ! -f .env ] && [ -f .env.example ]; then echo "📝 Creating .env from .env.example..."; cp .env.example .env; fi
-	@uv sync --extra optional && uv run pre-commit install || { echo "❌ setup failed"; exit 1; }
-	@$(MAKE) spacy-models; $(MAKE) generate && uv run python check_full_env.py || { echo "⚠️  Environment check found issues."; }
+	@uv sync --extra optional -q && uv run pre-commit install >/dev/null || { echo "❌ setup failed"; exit 1; }
+	@PYTHONWARNINGS="ignore" $(MAKE) --no-print-directory spacy-models; PYTHONWARNINGS="ignore" $(MAKE) --no-print-directory generate && uv run python check_full_env.py || { echo "⚠️  Environment check found issues."; }
 	@echo "✓ Complete setup finished!"
 
 install: ## Sync deps, install pre-commit hooks, and download spaCy models (run after cloning)
-	@uv sync --extra optional     || { echo "❌ uv sync failed."; exit 1; }
-	@uv run pre-commit install    || { echo "❌ pre-commit install failed."; exit 1; }
-	@uv run python -m spacy download en_core_web_sm || { echo "⚠️  spaCy model download failed"; }
+	@uv sync --extra optional -q  || { echo "❌ uv sync failed."; exit 1; }
+	@uv run pre-commit install >/dev/null || { echo "❌ pre-commit install failed."; exit 1; }
+	@uv run python -m spacy download en_core_web_sm >/dev/null 2>&1 || { echo "⚠️  spaCy model download failed"; }
 	@echo "✓ install complete"
 
 check: qa test ## Verify code quality and run tests
@@ -40,9 +40,9 @@ check: qa test ## Verify code quality and run tests
 
 update: ## Upgrade lockfile, sync deps & update pre-commit hooks
 	@uv lock --upgrade            || { echo "❌ uv lock upgrade failed."; exit 1; }
-	@uv sync --extra optional     || { echo "❌ uv sync failed."; exit 1; }
+	@uv sync --extra optional -q  || { echo "❌ uv sync failed."; exit 1; }
 	@uv run pre-commit autoupdate || { echo "❌ pre-commit autoupdate failed."; exit 1; }
-	@$(MAKE) generate
+	@$(MAKE) --no-print-directory generate
 	@echo "✓ update complete"
 
 # ── Dev workflow ──────────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ zip: ## Zip git-tracked files into project.zip
 # ── Utilities ─────────────────────────────────────────────────────────────────
 
 spacy-models: ## Download required spaCy models
-	@uv run python -m spacy download en_core_web_sm && echo "✓ spaCy models downloaded"
+	@uv run python -m spacy download en_core_web_sm >/dev/null 2>&1 && echo "✓ spaCy models downloaded"
 
 # ── AI tools ──────────────────────────────────────────────────────────────────
 
