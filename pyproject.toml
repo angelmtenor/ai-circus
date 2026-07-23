@@ -50,13 +50,6 @@ dependencies = [
     "PyYAML>=6.0.2",
 ]
 
-[project.optional-dependencies]
-# Install with: uv sync --extra optional
-# Includes heavy NLP models used in local dev / sample assistants only (not needed in container)
-optional = [
-    "spacy>=3.0.0",
-]
-
 [project.urls]
 Homepage = "https://github.com/angelmtenor/ai-circus"
 Repository = "https://github.com/angelmtenor/ai-circus"
