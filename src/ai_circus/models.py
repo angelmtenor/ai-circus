@@ -21,7 +21,7 @@ from ai_circus.data_model import get_env_config
 
 # Default embedding models
 DEFAULT_EMBEDDING_MODEL_OPENAI: str = "text-embedding-3-small"
-DEFAULT_EMBEDDING_MODEL_GOOGLE: str = "models/text-embedding-004"
+DEFAULT_EMBEDDING_MODEL_GOOGLE: str = "models/gemini-embedding-001"
 
 
 def get_llm(

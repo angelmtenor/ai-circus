@@ -77,8 +77,8 @@ def initialize_document_retriever(chunks: list[DocumentChunk]) -> Retriever:
         ValueError: If retriever initialization fails.
     """
     try:
-        # Use lighter model for faster performance in sample assistant
-        retriever = Retriever(model_choice="openai", default_k=2)  # Reduced from 4 to 2 for faster retrieval
+        # Reduced from 4 to 2 for faster retrieval; embeddings provider follows LLM_PROVIDER
+        retriever = Retriever(default_k=2)
         retriever.add_texts(
             texts=[chunk["page_content"] for chunk in chunks],
             metadatas=[chunk["metadata"] for chunk in chunks],

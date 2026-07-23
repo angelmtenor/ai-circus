@@ -40,7 +40,7 @@ def test_initialize_document_retriever_populates_retriever(monkeypatch: object) 
     ])
 
     assert isinstance(retriever, FakeRetriever)
-    assert captured["init"] == {"model_choice": "openai", "default_k": 2}
+    assert captured["init"] == {"default_k": 2}
     assert captured["texts"] == ["chunk-a"]
     assert captured["metadatas"] == [{"source": "doc.md"}]
 

@@ -56,7 +56,7 @@ class Retriever(BaseRetriever):
     def __init__(
         self,
         embeddings: Embeddings | None = None,
-        model_choice: Literal["openai", "google"] = "openai",
+        model_choice: Literal["openai", "google"] | None = None,
         hybrid: bool = False,
         default_k: int = 4,
         **kwargs: Any,
@@ -67,7 +67,7 @@ class Retriever(BaseRetriever):
         Args:
             embeddings (Embeddings, optional): Embeddings object to use. If None, created based on model_choice.
             model_choice (Literal["openai", "google"], optional): Model for embeddings if embeddings is None.
-                Defaults to "openai".
+                Defaults to the configured LLM_PROVIDER.
             hybrid (bool, optional): Whether to use hybrid retrieval with BM25. Defaults to False.
             default_k (int, optional): Default number of documents to retrieve. Defaults to 4.
             **kwargs: Additional keyword arguments passed to BaseRetriever.
@@ -81,17 +81,15 @@ class Retriever(BaseRetriever):
         self._hybrid = hybrid
         self._default_k = default_k
 
-        # Initialize empty FAISS index without texts
-        self._vectorstore = FAISS.from_texts([""], self._embeddings)
+        # Initialize empty FAISS index without texts (non-empty placeholder: some providers, e.g. Google, reject "")
+        self._vectorstore = FAISS.from_texts(["placeholder"], self._embeddings)
         self._vectorstore.delete([self._vectorstore.index_to_docstore_id[0]])  # Remove dummy document
 
         if hybrid:
             self._documents = []
 
-        logger.info(
-            f"Retriever initialized with model: {model_choice if embeddings is None else 'custom'}, "
-            f"vector_db: faiss, hybrid: {hybrid}"
-        )
+        resolved_model = type(self._embeddings).__name__ if embeddings is None else "custom"
+        logger.info(f"Retriever initialized with model: {resolved_model}, vector_db: faiss, hybrid: {hybrid}")
 
     def add_texts(self, texts: list[str], metadatas: list[dict] | None = None) -> None:
         """
