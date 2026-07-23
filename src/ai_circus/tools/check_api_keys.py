@@ -44,8 +44,6 @@ def get_preview_key(config_name: str) -> str:
     """Return the expected top-level preview key for an API response."""
     if config_name == "OpenAI":
         return "data"
-    if config_name == "Google":
-        return "items"
     return "results"
 
 
@@ -104,11 +102,6 @@ def main() -> None:
             headers=lambda key: {"Authorization": f"Bearer {key}"},
         ),
         APIConfig(
-            name="Google",
-            url="https://www.googleapis.com/discovery/v1/apis",
-            params=lambda key: {"key": key},
-        ),
-        APIConfig(
             name="Gemini",
             url="https://generativelanguage.googleapis.com/v1/models",
             params=lambda key: {"key": key},
@@ -124,7 +117,6 @@ def main() -> None:
     # Retrieve API keys
     api_keys = {
         "OpenAI": config.OPENAI_API_KEY.get_secret_value() if config.OPENAI_API_KEY else "",
-        "Google": config.GEMINI_API_KEY.get_secret_value() if config.GEMINI_API_KEY else "",
         "Gemini": config.GEMINI_API_KEY.get_secret_value() if config.GEMINI_API_KEY else "",
         "Tavily": config.TAVILY_API_KEY.get_secret_value() if config.TAVILY_API_KEY else "",
     }

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +23,7 @@ from agents import (
     Runner,
     function_tool,
     set_default_openai_api,
+    set_default_openai_client,
     set_tracing_disabled,
     trace,
 )
@@ -37,8 +37,12 @@ from ai_circus.core.logger import configure_logger, get_logger
 # Configuration
 # ---------------------------------------------------------------------------
 
-MODEL: str = "gpt-4o-mini"
-EMBEDDING_MODEL: str = "text-embedding-3-small"
+# Google's Gemini API exposes an OpenAI-compatible endpoint, so the OpenAI Agents SDK
+# and the raw AsyncOpenAI client below can talk to either provider via LLM_PROVIDER.
+GOOGLE_OPENAI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+GOOGLE_EMBEDDING_MODEL: str = "gemini-embedding-001"
+OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
+
 TOP_K_RETRIEVAL: int = 3
 CHUNK_SIZE: int = 2000
 CHUNK_OVERLAP: int = 50
@@ -47,10 +51,41 @@ SAMPLE_FILE_PATH: str = "scenarios/python_development/documents/15_software_engi
 logger = get_logger(__name__)
 
 
+def _make_client() -> AsyncOpenAI:
+    """Build an OpenAI-compatible client for the configured LLM_PROVIDER."""
+    config = get_env_config()
+    if config.LLM_PROVIDER == "google":
+        api_key = config.GEMINI_API_KEY
+        return AsyncOpenAI(
+            api_key=api_key.get_secret_value() if api_key else None,
+            base_url=GOOGLE_OPENAI_BASE_URL,
+        )
+
+    api_key = config.OPENAI_API_KEY
+    return AsyncOpenAI(api_key=api_key.get_secret_value() if api_key else None)
+
+
+def _resolve_model() -> str:
+    """Return the chat model name for the configured LLM_PROVIDER."""
+    config = get_env_config()
+    return config.GEMINI_MODEL if config.LLM_PROVIDER == "google" else config.OPENAI_MODEL
+
+
+def _resolve_embedding_model() -> str:
+    """Return the embedding model name for the configured LLM_PROVIDER."""
+    config = get_env_config()
+    return GOOGLE_EMBEDDING_MODEL if config.LLM_PROVIDER == "google" else OPENAI_EMBEDDING_MODEL
+
+
+MODEL: str = _resolve_model()
+EMBEDDING_MODEL: str = _resolve_embedding_model()
+
+
 def configure_agents_runtime() -> None:
     """Configure the Agents SDK runtime for local execution."""
     set_tracing_disabled(True)
     set_default_openai_api("chat_completions")
+    set_default_openai_client(_make_client(), use_for_tracing=False)
 
 
 # ---------------------------------------------------------------------------
@@ -89,16 +124,12 @@ class FinalResponse(BaseModel):
 
 
 class SimpleVectorStore:
-    """Lightweight in-process vector store backed by OpenAI embeddings."""
+    """Lightweight in-process vector store backed by the configured provider's embeddings."""
 
     def __init__(self, embedding_model: str = EMBEDDING_MODEL) -> None:
-        """Initialize the vector store with OpenAI client."""
-        config = get_env_config()
+        """Initialize the vector store with an OpenAI-compatible client."""
         self._embedding_model = embedding_model
-        api_key = config.OPENAI_API_KEY
-        self._client = AsyncOpenAI(
-            api_key=api_key.get_secret_value() if api_key else None,
-        )
+        self._client = _make_client()
         self._texts: list[str] = []
         self._metadatas: list[dict] = []
         self._embeddings: list[list[float]] = []
@@ -199,11 +230,7 @@ async def detect_intent(ctx: RunContextWrapper[AssistantContext], user_query: st
     Returns a JSON IntentResult with keys: intent, confidence, reasoning.
     Intent is one of: DOCUMENT_QUERY, CHIT_CHAT, OUT_OF_SCOPE, FOLLOW_UP.
     """
-    config = get_env_config()
-    api_key = config.OPENAI_API_KEY
-    client = AsyncOpenAI(
-        api_key=api_key.get_secret_value() if api_key else None,
-    )
+    client = _make_client()
     completion = await client.beta.chat.completions.parse(
         model=MODEL,
         messages=[
@@ -333,16 +360,12 @@ async def build_assistant(
         file_path: Path to the markdown/text document to load.
         chunk_size: Character length of each chunk.
         chunk_overlap: Overlap between consecutive chunks.
-        embedding_model: OpenAI embedding model to use.
+        embedding_model: Embedding model to use (provider-dependent).
 
     Returns:
         A populated AssistantContext ready for querying.
     """
     configure_agents_runtime()
-    config = get_env_config()
-    api_key = config.OPENAI_API_KEY
-    if api_key:
-        os.environ["OPENAI_API_KEY"] = api_key.get_secret_value()
 
     try:
         logger.info(f"Loading document: {file_path}")

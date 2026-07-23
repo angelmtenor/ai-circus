@@ -28,10 +28,10 @@ def test_get_env_config_default_local(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "google-test-key-exactly-39-chars-longxx")  # gitleaks:allow
 
     config = get_env_config()
-    # Assuming 'local' sets GEMINI_MODEL to 'gemini-3-flash-preview'
+    # Assuming 'local' sets GEMINI_MODEL to 'gemini-flash-lite-latest'
     # and LLM_PROVIDER to 'google'
     assert config.LLM_PROVIDER == "google"
-    assert config.GEMINI_MODEL == "gemini-3-flash-preview"
+    assert config.GEMINI_MODEL == "gemini-flash-lite-latest"
 
 
 def test_get_env_config_with_explicit_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -46,9 +46,9 @@ def test_get_env_config_with_explicit_env(monkeypatch: pytest.MonkeyPatch) -> No
     config = get_env_config(env="fucci")
 
     # Depending on how fucci is defined in settings.yaml, we check the result.
-    # Currently fucci sets LLM_PROVIDER="google" and GEMINI_MODEL="gemini-3-flash-preview".
+    # Currently fucci sets LLM_PROVIDER="google" and GEMINI_MODEL="gemini-flash-lite-latest".
     assert config.LLM_PROVIDER == "google"
-    assert config.GEMINI_MODEL == "gemini-3-flash-preview"
+    assert config.GEMINI_MODEL == "gemini-flash-lite-latest"
 
 
 def test_get_env_config_reads_app_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -60,4 +60,4 @@ def test_get_env_config_reads_app_env(monkeypatch: pytest.MonkeyPatch) -> None:
     config = get_env_config()
 
     assert config.LLM_PROVIDER == "google"
-    assert config.GEMINI_MODEL == "gemini-3-flash-preview"
+    assert config.GEMINI_MODEL == "gemini-flash-lite-latest"
