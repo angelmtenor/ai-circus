@@ -114,13 +114,13 @@ class Retriever(BaseRetriever):
             self.documents.extend(documents)
         logger.info(f"Added {len(texts)} texts to the FAISS vector store")
 
-    def retrieve(self, query: str, k: int = 4) -> list[Document]:
+    def retrieve(self, query: str, k: int | None = None) -> list[Document]:
         """
         Retrieve the top k relevant documents for the given query.
 
         Args:
             query (str): The query string.
-            k (int, optional): Number of documents to retrieve. Defaults to 4.
+            k (int, optional): Number of documents to retrieve. Defaults to the instance's default_k.
 
         Returns:
             list[Document]: List of relevant documents.
@@ -134,6 +134,7 @@ class Retriever(BaseRetriever):
             # Falls back to vector-only search. Implement BM25 fusion here when needed.
             logger.warning("hybrid=True is set but BM25 is not yet implemented — using vector search only")
 
+        k = k if k is not None else self.default_k
         return self.vectorstore.as_retriever(search_kwargs={"k": k}).invoke(query)
 
     def _get_relevant_documents(self, query: str, *, run_manager: object | None = None) -> list[Document]:
@@ -147,7 +148,7 @@ class Retriever(BaseRetriever):
         Returns:
             list[Document]: List of relevant documents.
         """
-        return self.retrieve(query, k=self.default_k)
+        return self.retrieve(query)
 
 
 if __name__ == "__main__":

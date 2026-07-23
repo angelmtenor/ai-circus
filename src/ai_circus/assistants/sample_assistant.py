@@ -53,9 +53,6 @@ def extract_document_chunks(file_path: str, chunk_size: int, chunk_overlap: int)
             file_path,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
-            strategy="fast",
-            languages=["eng"],
-            include_metadata=True,
         )
         logger.info(f"Extracted {len(chunks)} chunks from {file_path}")
         return [{"page_content": doc.page_content, "metadata": doc.metadata} for doc in chunks]

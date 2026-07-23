@@ -11,6 +11,7 @@ Author: Angel Martinez-Tenor, 2026.
 
 from __future__ import annotations
 
+import os
 import sys
 
 from pydantic import ValidationError
@@ -33,12 +34,12 @@ def main() -> None:
             logger.error("  {}: {}", " -> ".join(str(loc) for loc in error["loc"]), error["msg"])
         sys.exit(1)
 
-    import os
-
     current_env = os.getenv("APP_ENVIRONMENT", "local")
     lines = [f"--- Initializing Application Settings (ENV: {current_env}) ---"]
     # Redaction logic consistent with setup scripts
-    for field_name in config.model_fields:
+    # Accessed via type(config) rather than config directly: Pydantic v2 deprecates
+    # (and v3 removes) reading model_fields off an instance.
+    for field_name in type(config).model_fields:
         val = getattr(config, field_name)
         if hasattr(val, "get_secret_value"):
             secret_val = val.get_secret_value()

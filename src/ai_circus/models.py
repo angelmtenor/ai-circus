@@ -11,7 +11,7 @@ Author: Angel Martinez-Tenor, 2026.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
@@ -25,7 +25,7 @@ DEFAULT_EMBEDDING_MODEL_GOOGLE: str = "models/gemini-embedding-001"
 
 
 def get_llm(
-    provider: Literal["openai", "google"] | None = None,
+    provider: str | None = None,
     *,
     model: str | None = None,
     **kwargs: Any,
@@ -36,14 +36,14 @@ def get_llm(
     Parameters
     ----------
     provider
-        "openai" or "google". Defaults to LLM_PROVIDER in env.
+        "openai" or "google" (any other value falls back to "google"). Defaults to LLM_PROVIDER in env.
     model
         Explicit model name override.
     **kwargs
         Additional kwargs passed directly to the LangChain client.
     """
     config = get_env_config()
-    provider = provider or config.LLM_PROVIDER  # type: ignore[attr-defined]
+    provider = provider or config.LLM_PROVIDER
 
     if provider == "openai":
         llm_model = model or config.OPENAI_MODEL
@@ -65,13 +65,13 @@ def get_llm(
 
 
 def get_embeddings(
-    provider: Literal["openai", "google"] | None = None,
+    provider: str | None = None,
     *,
     model: str | None = None,
 ) -> Embeddings:
     """Return an embedding model."""
     config = get_env_config()
-    provider = provider or config.LLM_PROVIDER  # type: ignore[attr-defined]
+    provider = provider or config.LLM_PROVIDER
 
     if provider == "openai":
         embedding_model = model or DEFAULT_EMBEDDING_MODEL_OPENAI

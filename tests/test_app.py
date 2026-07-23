@@ -67,14 +67,16 @@ def test_main_runs_with_lazy_configuration(monkeypatch: pytest.MonkeyPatch) -> N
             "GEMINI_MODEL": object(),
         }
 
-    fake_env = SimpleNamespace(
-        OPENAI_API_KEY=FakeSecret(),
-        LLM_LANGUAGES="Spanish",
-        LLM_PROVIDER="openai",
-        OPENAI_MODEL="gpt-4o",
-        GEMINI_MODEL="gemini-1.5-flash",
-        model_fields=FakeEnvConfig.model_fields,
-    )
+        def __init__(self) -> None:
+            self.OPENAI_API_KEY = FakeSecret()
+            self.LLM_LANGUAGES = "Spanish"
+            self.LLM_PROVIDER = "openai"
+            self.OPENAI_MODEL = "gpt-4o"
+            self.GEMINI_MODEL = "gemini-1.5-flash"
+
+    # A real instance (not a SimpleNamespace) so that `type(config).model_fields`
+    # resolves the same way it does for the real Pydantic EnvConfig.
+    fake_env = FakeEnvConfig()
 
     class FakeLLM:
         def invoke(self, prompt: str) -> SimpleNamespace:
