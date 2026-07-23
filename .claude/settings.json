@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make check *)",
+      "Bash(make run *)",
+      "Bash(uv pip *)",
+      "Bash(make ai-sample-assistant *)",
+      "Bash(uv run python -c ' *)"
+    ]
+  }
+}
