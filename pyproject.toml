@@ -188,6 +188,10 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 minversion = "7.0"
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+filterwarnings = [
+    # Upstream warning triggered on import, not by our code — nothing here to fix.
+    "ignore:'_UnionGenericAlias' is deprecated.*:DeprecationWarning:google.genai",
+]
 addopts = [
     "--cov=src",
     "--cov-report=html",
