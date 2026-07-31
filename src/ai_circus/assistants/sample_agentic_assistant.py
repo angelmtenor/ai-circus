@@ -31,6 +31,14 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
 from ai_circus import get_env_config
+from ai_circus.assistants.chunking import split_into_chunks
+from ai_circus.assistants.demo_config import (
+    CHUNK_OVERLAP,
+    CHUNK_SIZE,
+    GOOGLE_EMBEDDING_MODEL_RAW,
+    OPENAI_EMBEDDING_MODEL,
+    SAMPLE_FILE_PATH,
+)
 from ai_circus.core.logger import configure_logger, get_logger
 
 # ---------------------------------------------------------------------------
@@ -40,13 +48,8 @@ from ai_circus.core.logger import configure_logger, get_logger
 # Google's Gemini API exposes an OpenAI-compatible endpoint, so the OpenAI Agents SDK
 # and the raw AsyncOpenAI client below can talk to either provider via LLM_PROVIDER.
 GOOGLE_OPENAI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
-GOOGLE_EMBEDDING_MODEL: str = "gemini-embedding-001"
-OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
 
 TOP_K_RETRIEVAL: int = 3
-CHUNK_SIZE: int = 2000
-CHUNK_OVERLAP: int = 50
-SAMPLE_FILE_PATH: str = "scenarios/python_development/documents/15_software_engineering_principles.md"
 
 logger = get_logger(__name__)
 
@@ -74,7 +77,7 @@ def _resolve_model() -> str:
 def _resolve_embedding_model() -> str:
     """Return the embedding model name for the configured LLM_PROVIDER."""
     config = get_env_config()
-    return GOOGLE_EMBEDDING_MODEL if config.LLM_PROVIDER == "google" else OPENAI_EMBEDDING_MODEL
+    return GOOGLE_EMBEDDING_MODEL_RAW if config.LLM_PROVIDER == "google" else OPENAI_EMBEDDING_MODEL
 
 
 MODEL: str = _resolve_model()
@@ -182,23 +185,18 @@ def load_and_chunk(
 ) -> list[dict]:
     """Read a markdown/text file and split into overlapping chunks."""
     text = Path(file_path).read_text(encoding="utf-8")
-    chunks: list[dict] = []
-    start = 0
-    idx = 0
-    while start < len(text):
-        end = min(start + chunk_size, len(text))
-        chunks.append({
-            "page_content": text[start:end],
+    return [
+        {
+            "page_content": content,
             "metadata": {
                 "source": file_path,
                 "chunk_index": idx,
                 "start_char": start,
                 "end_char": end,
             },
-        })
-        start += chunk_size - chunk_overlap
-        idx += 1
-    return chunks
+        }
+        for idx, (start, end, content) in enumerate(split_into_chunks(text, chunk_size, chunk_overlap))
+    ]
 
 
 # ---------------------------------------------------------------------------

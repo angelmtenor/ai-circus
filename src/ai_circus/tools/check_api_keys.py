@@ -155,17 +155,5 @@ def main() -> None:
         logger.info(item)
 
 
-class SimpleClass:
-    """A simple class for demonstration purposes."""
-
-    def __init__(self, name: str) -> None:
-        """Initialize the class with a name."""
-        self.name = name
-
-    def greet(self) -> None:
-        """Print a greeting message."""
-        logger.info(f"Hello, {self.name}!")
-
-
 if __name__ == "__main__":
     main()

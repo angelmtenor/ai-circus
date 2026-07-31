@@ -11,17 +11,11 @@ from typing import TypedDict
 
 from langgraph.graph.state import CompiledStateGraph
 
+from ai_circus.assistants.demo_config import CHUNK_OVERLAP, CHUNK_SIZE, SAMPLE_FILE_PATH
 from ai_circus.assistants.document_extractor import DocumentExtractor
 from ai_circus.assistants.intent_detector_graph import GraphState, build_graph
 from ai_circus.assistants.retriever import Retriever
 from ai_circus.core.logger import configure_logger, get_logger
-
-# Configuration constants - OPTIMIZED FOR SPEED
-CHUNK_SIZE: int = 2000  # Reduced from 5000 for faster processing
-CHUNK_OVERLAP: int = 50  # Reduced from 100 for faster processing
-SAMPLE_FILE_PATH: str = "scenarios/python_development/documents/15_software_engineering_principles.md"
-# Note: Ensure the above file exists before running this module
-# This is typically present when cloning the repository with scenario documentation
 
 logger = get_logger(__name__)
 
@@ -74,7 +68,7 @@ def initialize_document_retriever(chunks: list[DocumentChunk]) -> Retriever:
         ValueError: If retriever initialization fails.
     """
     try:
-        # Reduced from 4 to 2 for faster retrieval; embeddings provider follows LLM_PROVIDER
+        # embeddings provider follows LLM_PROVIDER
         retriever = Retriever(default_k=2)
         retriever.add_texts(
             texts=[chunk["page_content"] for chunk in chunks],
@@ -161,7 +155,7 @@ def run_assistant_workflow() -> None:
         assistant_graph = build_graph(retriever)
         logger.info("Assistant graph built successfully")
 
-        # Define test conversations - REDUCED FOR FASTER DEMO
+        # Define test conversations
         test_conversations = [
             [
                 "What is the DRY principle in software engineering?",
@@ -180,7 +174,7 @@ def run_assistant_workflow() -> None:
                     query=query,
                     conversation_history=conversation_history,
                     document_path=SAMPLE_FILE_PATH,
-                    chunk_index=0,  # Simplified: Use first chunk index
+                    chunk_index=0,
                 )
                 # Log intent results, assistant response, and document filename
                 round_info = {

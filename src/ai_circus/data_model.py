@@ -87,7 +87,7 @@ class EnvConfig(BaseSettings):
         return v
 
 
-_SOURCE_YAML_HASH = "2a1d83e3b8402a466ed6798885c146a5779d2b22c381faff1036645e2d3a4bf8"
+_SOURCE_YAML_HASH = "ebe2f9b9395688977adaccda2612cb54d164655700537013463ca3d459abaaa5"
 
 
 EnvConfig.model_rebuild()
@@ -113,7 +113,7 @@ def get_env_config(env: str | None = None) -> EnvConfig:
 
     The active profile is resolved from the *env* argument, then the
     ``APP_ENVIRONMENT`` environment variable, defaulting to ``"local"``.
-    Valid profiles: local, fucci, ministack.
+    Valid profiles: local, staging, production.
     """
     active_env = env or os.getenv("APP_ENVIRONMENT", "local")
     overrides = _load_env_overrides(active_env)

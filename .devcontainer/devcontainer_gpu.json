@@ -1,5 +1,5 @@
 {
-  "name": "Custom Ubuntu 24 GPU",
+  "name": "Custom Ubuntu 26 GPU",
   "build": {
     "dockerfile": "Dockerfile",
     "context": "."
@@ -20,10 +20,8 @@
         "github.copilot-chat",
         "ms-azuretools.vscode-docker",
         "ms-python.python",
-        "ms-python.vscode-pylance",
         "ms-python.debugpy",
         "charliermarsh.ruff",
-        "ms-python.black-formatter",
         "ms-toolsai.jupyter",
         "ms-toolsai.jupyter-keymap",
         "ms-toolsai.jupyter-renderers",
@@ -31,17 +29,15 @@
         "tamasfe.even-better-toml"
       ],
       "settings": {
-        "python.linting.enabled": true,
-        "python.linting.ruffEnabled": true,
-        "python.formatting.provider": "black",
         "editor.formatOnSave": true,
-        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.defaultFormatter": "charliermarsh.ruff",
         "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
           "editor.codeActionsOnSave": {
-            "source.organizeImports": "always"
+            "source.organizeImports": "always",
+            "source.fixAll.ruff": "always"
           }
-        },
-        "jupyter.alwaysTrustNotebooks": true
+        }
       }
     }
   }

@@ -17,7 +17,7 @@ If you're new to contributing, don't worry! We're here to help. Here are the gen
 7. **Make Changes**: Implement your changes, following the project's coding standards and guidelines.
 8. **Run Tests and Checks**: Ensure your changes pass all quality checks and tests using `make check`.
 9. **Full Verification**: Before committing, run `make all` to verify the entire pipeline (clean -> setup -> check -> run).
-10. **Commit Your Changes**: Commit your changes with clear and descriptive messages.
+10. **Commit Your Changes**: Commit your changes with clear and descriptive messages following [styleguide.md](styleguide.md).
 11. **Push Your Branch**: Push your feature branch to your fork on GitHub.
 12. **Open a Pull Request**: Open a pull request from your feature branch to the main branch of the original repository.
 13. **Follow Up**: Respond to any feedback or requests for changes from the maintainers.
@@ -66,7 +66,7 @@ When opening a pull request, please:
 - Ensure any install or build dependencies are removed before the end of the layer when doing a build.
 - Update the README.md with details of changes to the interface, including new environment variables, exposed ports, useful file locations, and container parameters.
 - Increase the version numbers in any examples files and the README.md to the new version that this Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-- You may merge the Pull Request once you have the sign-off of two other developers, or if you do not have permission to do that, you may request the second reviewer to merge it for you.
+- The repository operator reviews and merges the Pull Request after inspecting the changes, per the human-in-the-loop protocol in [AGENTS.md](AGENTS.md).
 
 ## Code of Conduct
 

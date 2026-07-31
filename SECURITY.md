@@ -14,7 +14,7 @@ Before deploying ai-circus services to production, verify every item below:
 
 ### Configuration
 
-- [ ] `settings.yaml` ↔ `data_model.py` are in sync (run `uv run ai-env-check`)
+- [ ] `settings.yaml` ↔ `data_model.py` are in sync (run `uv run ai-config-drift-check`)
 - [ ] All mandatory fields have regex validation in `settings.yaml`
 - [ ] `fail_on_missing: true` in global settings (app fails fast on missing vars)
 
@@ -66,7 +66,7 @@ subprocess.run(["git", "diff", "--staged"], check=True)  # Safe
 ### Env Drift Detection
 
 Generated `data_model.py` contains a SHA-256 hash of the source YAML.
-Run `uv run ai-env-check` to verify sync. CI should include this check.
+Run `uv run ai-config-drift-check` to verify sync. CI should include this check.
 
 ---
 

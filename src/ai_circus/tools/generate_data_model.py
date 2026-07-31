@@ -25,9 +25,15 @@ DEFAULT_OUTPUT = "src/ai_circus/data_model.py"
 DEFAULT_ENV_EXAMPLE = ".env.example"
 
 
+def _profile_names(config: dict[str, Any]) -> list[str]:
+    """Return the configured environment profile names (excluding the shared 'base' block)."""
+    return [name for name in config.get("environments", {}) if name != "base"]
+
+
 def update_env_example(config: dict[str, Any], output_path: str | Path) -> None:
     """Generate or update .env.example from config (secrets only)."""
-    lines = ["# Active Environment Profile (local, fucci, ministack)", "APP_ENVIRONMENT=local", ""]
+    profiles = ", ".join(_profile_names(config))
+    lines = [f"# Active Environment Profile ({profiles})", "APP_ENVIRONMENT=local", ""]
 
     for var in config.get("env_variables", []):
         if not var.get("secret", False):
@@ -53,10 +59,11 @@ def generate_data_model(
     env_example_path: str | Path = DEFAULT_ENV_EXAMPLE,
 ) -> None:
     """Read YAML config and write the Pydantic model file."""
-    with open(config_path, encoding="utf-8") as f:
-        raw_yaml = f.read()
-    config = yaml.safe_load(raw_yaml)
-    yaml_hash = hashlib.sha256(raw_yaml.encode()).hexdigest()
+    config_bytes = Path(config_path).read_bytes()
+    config = yaml.safe_load(config_bytes)
+    # Hash raw bytes (not a text-mode read) so this matches check_env_drift's
+    # read_bytes() exactly, regardless of platform line-ending translation.
+    yaml_hash = hashlib.sha256(config_bytes).hexdigest()
 
     global_settings = config.get("global_settings", {})
     env_file = global_settings.get("env_file", ".env")
@@ -184,7 +191,7 @@ def generate_data_model(
         "",
         "    The active profile is resolved from the *env* argument, then the",
         '    ``APP_ENVIRONMENT`` environment variable, defaulting to ``"local"``.',
-        "    Valid profiles: local, fucci, ministack.",
+        f"    Valid profiles: {', '.join(_profile_names(config))}.",
         '    """',
         '    active_env = env or os.getenv("APP_ENVIRONMENT", "local")',
         "    overrides = _load_env_overrides(active_env)",

@@ -15,49 +15,39 @@ from ai_circus.data_model import get_env_config
 
 
 @pytest.fixture(autouse=True)
-def _clear_env_config_cache() -> None:
-    """Clear the lru_cache on get_env_config before each test."""
+def _prepare_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Provide mandatory secrets and clear the lru_cache before each test."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key-that-is-at-least-20-chars-long")  # gitleaks:allow
+    monkeypatch.setenv("GEMINI_API_KEY", "google-test-key-exactly-39-chars-longxx")  # gitleaks:allow
     get_env_config.cache_clear()
 
 
 def test_get_env_config_default_local(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that default environment is 'local'."""
+    """With no APP_ENVIRONMENT set, the 'local' profile (base defaults) is used."""
     monkeypatch.delenv("APP_ENVIRONMENT", raising=False)
-    # Ensure mandatory secrets are provided for Pydantic validation
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key-that-is-at-least-20-chars-long")  # gitleaks:allow
-    monkeypatch.setenv("GEMINI_API_KEY", "google-test-key-exactly-39-chars-longxx")  # gitleaks:allow
 
     config = get_env_config()
-    # Assuming 'local' sets GEMINI_MODEL to 'gemini-flash-lite-latest'
-    # and LLM_PROVIDER to 'google'
+
     assert config.LLM_PROVIDER == "google"
     assert config.GEMINI_MODEL == "gemini-flash-lite-latest"
 
 
-def test_get_env_config_with_explicit_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test passing an explicit env name to get_env_config."""
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key-that-is-at-least-20-chars-long")  # gitleaks:allow
-    monkeypatch.setenv("GEMINI_API_KEY", "google-test-key-exactly-39-chars-longxx")  # gitleaks:allow
+@pytest.mark.parametrize("profile", ["local", "staging", "production"])
+def test_get_env_config_reads_app_environment(monkeypatch: pytest.MonkeyPatch, profile: str) -> None:
+    """APP_ENVIRONMENT selects the active profile (all profiles currently fall back to base defaults)."""
+    monkeypatch.setenv("APP_ENVIRONMENT", profile)
 
-    # Even if APP_ENVIRONMENT is set...
-    monkeypatch.setenv("APP_ENVIRONMENT", "ministack")
+    config = get_env_config()
 
-    # ...an explicit argument should override it
-    config = get_env_config(env="fucci")
-
-    # Depending on how fucci is defined in settings.yaml, we check the result.
-    # Currently fucci sets LLM_PROVIDER="google" and GEMINI_MODEL="gemini-flash-lite-latest".
     assert config.LLM_PROVIDER == "google"
     assert config.GEMINI_MODEL == "gemini-flash-lite-latest"
 
 
-def test_get_env_config_reads_app_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test that get_env_config reads the APP_ENVIRONMENT environment variable."""
-    monkeypatch.setenv("APP_ENVIRONMENT", "ministack")
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key-that-is-at-least-20-chars-long")  # gitleaks:allow
-    monkeypatch.setenv("GEMINI_API_KEY", "google-test-key-exactly-39-chars-longxx")  # gitleaks:allow
+def test_get_env_config_explicit_env_overrides_app_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An explicit `env=` argument takes priority over the APP_ENVIRONMENT variable."""
+    monkeypatch.setenv("APP_ENVIRONMENT", "production")
 
-    config = get_env_config()
+    config = get_env_config(env="staging")
 
     assert config.LLM_PROVIDER == "google"
     assert config.GEMINI_MODEL == "gemini-flash-lite-latest"

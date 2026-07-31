@@ -21,6 +21,18 @@ import pytest  # noqa: E402
 import ai_circus.core.logger as _logger_module  # noqa: E402
 
 
+class FakeSecret:
+    """Minimal stand-in for pydantic.SecretStr, used wherever tests need a fake API key."""
+
+    def __init__(self, value: str = "sk-test-12345678901234567890") -> None:
+        """Store the plaintext value this fake secret should reveal."""
+        self._value = value
+
+    def get_secret_value(self) -> str:
+        """Return the fake secret's plaintext value."""
+        return self._value
+
+
 @pytest.fixture(autouse=True)
 def reset_singletons() -> Generator[None]:
     """Clear lru_cache singletons and module-level state between tests."""

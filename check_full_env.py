@@ -17,6 +17,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any, Protocol
 
+import yaml
 from dotenv import dotenv_values, load_dotenv
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.specifiers import SpecifierSet
@@ -193,31 +194,11 @@ class Checker:
         else:
             self.warn("uv not found in PATH — install: https://docs.astral.sh/uv/getting-started/installation/")
 
-    def check_manual_installs(self, example_env_path: Path | str = ".env.example") -> None:
-        """Check for CLI tools listed in .env.example under the manual installs marker."""
-        path = Path(example_env_path)
-        if not path.exists():
-            return
-
-        tools: list[str] = []
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if line.strip().startswith("# Manual installs for checking:"):
-                tools = [t.strip() for t in line.split(":", 1)[1].split(",") if t.strip()]
-                break
-
-        if not tools:
-            return
-
-        self.section("Manual Installs (CLI Tools)")
-        missing = [t for t in tools if not shutil.which(t)]
-        for tool in tools:
-            (self.ok if tool not in missing else self.warn)(
-                f"{tool} {'found' if tool not in missing else 'not found in PATH'}"
-            )
-        if missing:
-            printer("   Consider installing missing tools or adding them to PATH.")
-
-    def check_environment_variables(self, example_env_path: Path | str = ".env.example") -> None:
+    def check_environment_variables(
+        self,
+        example_env_path: Path | str = ".env.example",
+        settings_path: Path | str = "settings.yaml",
+    ) -> None:
         """Validate environment variables against .env.example, flagging missing or placeholder values."""
         path = Path(example_env_path)
         if not path.exists():
@@ -227,18 +208,7 @@ class Checker:
         self.section("Environment Variables")
 
         example_vars = dotenv_values(path)
-        required_keys: set[str] = set()
-        in_required = False
-        for line in path.read_text(encoding="utf-8").splitlines():
-            stripped = line.strip()
-            if stripped.startswith("#") and "required" in stripped.lower():
-                in_required = True
-                continue
-            if "=" in stripped and not stripped.startswith("#"):
-                key = stripped.split("=", 1)[0].strip()
-                if in_required:
-                    required_keys.add(key)
-                in_required = False
+        required_keys = _mandatory_secret_keys(settings_path)
 
         table = self._new_table("Key", "Value", "Status")
         for key in sorted(example_vars):
@@ -330,6 +300,17 @@ def _redact(value: str | None) -> str:
     return "****" + value[-4:] if len(value) >= 4 else "****"
 
 
+def _mandatory_secret_keys(settings_path: Path | str) -> set[str]:
+    """Return names of secret env vars marked mandatory in settings.yaml (the source of truth)."""
+    path = Path(settings_path)
+    if not path.exists():
+        return set()
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return {
+        var["name"] for var in data.get("env_variables", []) if var.get("secret", False) and var.get("mandatory", False)
+    }
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 
@@ -343,7 +324,6 @@ def main() -> None:
 
     checker = Checker(verbose=args.verbose)
     checker.check_virtual_environment()
-    checker.check_manual_installs()
     load_dotenv()
     checker.check_environment_variables()
     checker.check_python_packages()

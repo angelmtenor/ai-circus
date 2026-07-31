@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Ubuntu 24.04 Simple Setup Script
+# Ubuntu 26.04 Simple Setup Script
 #
 # Usage:
 #   chmod +x setup_sudo.sh
@@ -16,7 +16,7 @@
 #
 # Description:
 #   This script performs a streamlined, non-interactive initial setup for
-#   Ubuntu 24.04 systems. It:
+#   Ubuntu 26.04 systems. It:
 #     • Ensures execution as root
 #     • Sets system timezone to UTC
 #     • Checks for internet connectivity

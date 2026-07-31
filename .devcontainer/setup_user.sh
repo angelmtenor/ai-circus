@@ -13,7 +13,7 @@
 #   • Ensures ~/.local/bin is in the PATH
 #   • Configures basic Git settings (default branch, username, email)
 #   • Sets a simple, colored bash prompt
-#   • Adds a convenient alias: `setup` → `source setup.sh`
+#   • Adds a convenient alias: `setup` → `source setup_user.sh`
 #   • Installs or updates NVM (Node Version Manager) and ensures Node.js 20
 #   • Installs/updates `uv` CLI tool
 #
@@ -67,7 +67,7 @@ set_prompt() {
 
 # Add alias
 add_alias() {
-    append "# alias from setup_user" 'alias setup="source setup.sh"'
+    append "# alias from setup_user" 'alias setup="source setup_user.sh"'
     log "Alias added."
 }
 
@@ -104,5 +104,4 @@ main() {
 
     log "Setup complete. Run: source ~/.bashrc"
 }
-
 main

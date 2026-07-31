@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 import ai_circus.assistants.sample_agentic_assistant as sample_agentic
+from tests.conftest import FakeSecret
 
 
 def test_load_and_chunk_splits_text_with_metadata(tmp_path: object) -> None:
@@ -27,10 +28,6 @@ def test_load_and_chunk_splits_text_with_metadata(tmp_path: object) -> None:
 async def test_build_assistant_creates_context_with_vector_store(monkeypatch: object) -> None:
     """Building the agentic assistant should load chunks and populate the vector store."""
     recorded: dict[str, object] = {}
-
-    class FakeSecret:
-        def get_secret_value(self) -> str:
-            return "sk-test-12345678901234567890"
 
     class FakeEnvConfig:
         OPENAI_API_KEY = FakeSecret()

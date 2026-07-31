@@ -50,10 +50,6 @@ class TestAPIConfig:
 class TestAPIClient:
     """Tests for APIClient class."""
 
-    def test_api_client_is_static(self) -> None:
-        """Test that APIClient.fetch_data is a static method."""
-        assert isinstance(APIClient.fetch_data, staticmethod) or callable(APIClient.fetch_data)
-
     def test_resolve_api_config_keeps_source_immutable(self) -> None:
         """Test that dynamic request values are resolved without mutating the input config."""
         config = APIConfig(

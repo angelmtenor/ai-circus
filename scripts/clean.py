@@ -20,14 +20,22 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 
+BACKUP_DIR = Path("backups")
+MAX_ENV_BACKUPS = 3
+
+
 def backup_env() -> None:
-    """Backup .env to backups/ folder."""
+    """Backup .env to backups/ folder, keeping only the most recent MAX_ENV_BACKUPS."""
     if os.path.exists(".env"):
-        os.makedirs("backups", exist_ok=True)
+        BACKUP_DIR.mkdir(exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = f"backups/.env.bak_{timestamp}"
+        backup_path = BACKUP_DIR / f".env.bak_{timestamp}"
         shutil.copy(".env", backup_path)
         logger.info(f"📦 Backed up .env to {backup_path}")
+
+        old_backups = sorted(BACKUP_DIR.glob(".env.bak_*"))
+        for stale in old_backups[:-MAX_ENV_BACKUPS]:
+            stale.unlink()
 
 
 def clean_project() -> None:
@@ -52,6 +60,7 @@ def clean_project() -> None:
         "*.pyc",
         ".coverage*",
         "coverage.xml",
+        "coverage.json",
     ]
 
     # Recursive directory removal

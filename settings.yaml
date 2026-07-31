@@ -75,8 +75,8 @@ environments:
   local: {}
     # Local development overrides
 
-  fucci: {}
-    # Fucci cluster profile — overrides go here
+  staging: {}
+    # Staging environment profile — overrides go here
 
-  ministack: {}
-    # Ministack cluster profile — overrides go here
+  production: {}
+    # Production environment profile — overrides go here

@@ -13,6 +13,7 @@ from pathlib import Path
 
 from langchain_core.documents import Document
 
+from ai_circus.assistants.chunking import split_into_chunks
 from ai_circus.core.logger import get_logger
 
 # Module-level constants
@@ -60,20 +61,13 @@ class DocumentExtractor:
         Returns:
             list[str]: List of text chunks.
         """
-        if chunk_size <= 0 or chunk_overlap < 0 or chunk_overlap >= chunk_size:
-            logger.error(f"Invalid chunk parameters: size={chunk_size}, overlap={chunk_overlap}")
-            raise ValueError("Chunk size must be positive, and overlap must be non-negative and less than chunk size")
-
-        chunks: list[str] = []
-        start = 0
         text = " ".join(text.split())  # Normalize whitespace
-        while start < len(text):
-            end = min(start + chunk_size, len(text))
-            chunk = text[start:end]
-            if chunk.strip():
-                chunks.append(chunk)
-            start += chunk_size - chunk_overlap
-        return chunks
+        try:
+            windows = split_into_chunks(text, chunk_size, chunk_overlap)
+        except ValueError as e:
+            logger.error(f"Invalid chunk parameters: size={chunk_size}, overlap={chunk_overlap}")
+            raise ValueError(str(e)) from e
+        return [content for _, _, content in windows if content.strip()]
 
     def extract_text(
         self,

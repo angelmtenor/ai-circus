@@ -1,4 +1,4 @@
-# Dev Container: Data Science Ubuntu 24.04
+# Dev Container: Data Science Ubuntu 26.04
 # Author: Angel Martinez-Tenor (updated by Grok)
 # Date: 2025
 # Source: https://github.com/angelmtenor/ds-template
@@ -11,7 +11,7 @@
 #   - USER_GID: Group ID (default: 1000)
 
 # Base image
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 # Metadata
 LABEL maintainer="Angel Martinez-Tenor <angelmtenor@gmail.com>" \

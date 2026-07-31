@@ -21,8 +21,8 @@
 # - Optional: NVM (Node Version Manager) and pipx for referenced paths.
 #
 # Notes:
-# - Ensure referenced files (e.g., ~/.bash_aliases, setup.sh) exist.
-# - Review ~/.bash_aliases and setup.sh for sensitive data before sharing.
+# - Ensure referenced files (e.g., ~/.bash_aliases, setup_user.sh) exist.
+# - Review ~/.bash_aliases and setup_user.sh for sensitive data before sharing.
 # - Portable across machines using $HOME for paths.
 # - Verify setup by running `bash --rcfile ~/.bashrc` after sourcing.
 
@@ -96,7 +96,7 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 
 # Project setup alias
-[[ -f setup.sh ]] && alias setup='source setup.sh'
+[[ -f setup_user.sh ]] && alias setup='source setup_user.sh'
 
 # Custom prompt colors
 RED='\[\e[31m\]'

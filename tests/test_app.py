@@ -9,6 +9,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 import ai_circus.app as app
+from tests.conftest import FakeSecret
 
 
 class FakeLogger:
@@ -53,10 +54,6 @@ def build_validation_error() -> ValidationError:
 def test_main_runs_with_lazy_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that app.main loads config lazily and invokes the configured LLM."""
     fake_logger = FakeLogger()
-
-    class FakeSecret:
-        def get_secret_value(self) -> str:
-            return "sk-test-12345678901234567890"
 
     class FakeEnvConfig:
         model_fields: ClassVar[dict[str, object]] = {
