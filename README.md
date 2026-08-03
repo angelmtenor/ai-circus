@@ -10,9 +10,33 @@ A building block for generative AI tool applications with state-of-the-art perfo
 
 ---
 
+## 🖥️ Prerequisites: Development Environment
+
+Production is Linux, so development should be too — this repo targets **Ubuntu 26.04
+(minimal)**, whichever way you provision it:
+
+- **macOS / native Linux:** already Unix-based — skip ahead to Quick Start.
+- **Windows:** use **WSL** ([install guide](https://learn.microsoft.com/en-us/windows/wsl/install)).
+- **Remote VM** (AWS/Azure/GCP/on-prem): provision an Ubuntu 26.04 base and connect over SSH.
+- **VS Code Dev Container:** open this folder in VS Code and let it build `.devcontainer/Dockerfile`.
+
+Once you're on an Ubuntu 26.04 machine or session (WSL, native Linux, or remote VM — not needed
+for Dev Containers, which run this automatically), provision it with this repo's setup scripts:
+
+```bash
+sudo ./.devcontainer/setup_sudo.sh   # one-time root setup: packages, timezone, optional GPU/CUDA
+source .devcontainer/setup_user.sh   # per-user setup: git config, uv, Node via nvm, shell prompt (must be sourced)
+```
+
+Both scripts are idempotent (safe to re-run). See
+[reference/01-fundamentals.md](reference/01-fundamentals.md) for the full rationale and options.
+
+---
+
 ## 🚀 Quick Start
 
-Get up and running in seconds after cloning the repository:
+Once your environment is ready, get the project up and running in seconds after cloning the
+repository:
 
 ```bash
 make setup    # Initialize venv, .env, generate settings, and verify environment
@@ -75,6 +99,29 @@ The project uses a single source of truth for settings defined in `settings.yaml
 | `make test` | Run the pytest suite |
 | `make all` | Full end-to-end verification pipeline |
 | `make update` | Upgrade lockfile, sync deps, update pre-commit hooks |
+
+### AI Tools
+
+| Command | Description |
+|---|---|
+| `make ai-hello-world` | Sanity-check LLM call against your configured provider |
+| `make ai-check-api-keys` | Validate that configured API keys actually work |
+| `make ai-commit` | Generate a commit message from staged changes |
+| `make ai-sample-assistant` | Run the sample single-turn assistant |
+| `make ai-sample-agentic` | Run the sample tool-using agentic assistant |
+| `make ai-app` | Run the main application (alias for `make run`) |
+
+Each target is a thin wrapper around a `uv run` console script — they're declared under
+`[project.scripts]` in [pyproject.toml](pyproject.toml) and can be run directly without `make`,
+e.g. `uv run ai-hello-world`.
+
+---
+
+## 📚 Learn More
+
+For the reasoning behind this stack and structure — dev environment, tooling, software
+engineering practices, ML, and GenAI — see the reference notes starting at
+[reference/00-itinerary.md](reference/00-itinerary.md).
 
 ---
 
