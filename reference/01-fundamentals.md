@@ -24,7 +24,9 @@ specifics. Get comfortable with these before moving on to
 
 ## Build Automation: Makefile
 
-* [Makefile Tutorial By Example](https://makefiletutorial.com)
+* [Creating a Python Makefile – Earthly Blog](https://earthly.dev/blog/python-makefile/) —
+  covers targets, `.PHONY`, variables, and `venv`/test/lint/clean rules using Python examples
+  (not C/C++).
 
 ## QA / Code Quality: pre-commit
 
