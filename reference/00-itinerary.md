@@ -10,7 +10,7 @@ one-off notes.
 
 | # | File | Covers | Level |
 |---|------|--------|-------|
-| 1 | [01-fundamentals.md](01-fundamentals.md) | Python, Unix/shell, VS Code, Docker, uv, ruff, Makefile, pre-commit, cookiecutter | Basics — tool/language agnostic |
+| 1 | [01-fundamentals.md](01-fundamentals.md) | Dev environment (WSL/VM/Dev Container), Python, Unix/shell, VS Code, Docker, uv, ruff, Makefile, pre-commit, cookiecutter | Basics — tool/language agnostic |
 | 2 | [02-software-engineering.md](02-software-engineering.md) | SOLID/DRY/KISS principles, dev standards, CI/CD, IaC, secrets, code review | Core practices |
 | 3 | [03-machine-learning.md](03-machine-learning.md) | ML/DS concepts, workflow, explainability (SHAP/LIME), DS Python libraries | ML |
 | 4 | [04-genai.md](04-genai.md) | GenAI/RAG/agents best practices, LangChain, MCP, evaluation, courses & repos | GenAI |

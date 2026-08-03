@@ -60,7 +60,10 @@ Write code as if you'll be the next person maintaining it—months later, under 
 ## Tools & Best Practices
 
 * **Python Code Quality:** linters, formatters (black, flake8, pylint — largely superseded by ruff, see [01-fundamentals.md](01-fundamentals.md))
-* **Version Control:** Git branching strategies (GitFlow, trunk-based development)
+* **Version Control:** **Git Flow is the standard branching strategy** for collaborative
+  development in this repo (trunk-based development is the lighter-weight alternative for
+  smaller teams). No direct pushes to the main branch — every change lands via a PR/MR opened
+  against the repo.
 * **CI/CD:** Automated pipelines for testing, linting, and deployment
 * **Secrets Management:** Keep credentials outside the repository (use environment variables or vaults)
 * **Code Reviews:** Ensure readability, maintainability, and adherence to principles
