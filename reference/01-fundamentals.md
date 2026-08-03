@@ -6,7 +6,9 @@ specifics. Get comfortable with these before moving on to
 
 ## Python
 
-* [W3Schools](https://www.w3schools.com/) — quick syntax/reference lookups.
+* [W3Schools Python Tutorial](https://www.w3schools.com/python/default.asp) — basic Python
+  syntax/reference. W3Schools also covers most other mainstream languages, so it's worth
+  bookmarking beyond Python too.
 * **Package manager: uv** (installer/resolver) — [uv Documentation](https://docs.astral.sh/uv)
 * **Linter & formatter: ruff** (fast, replaces black/flake8/isort) — [ruff Documentation](https://docs.astral.sh/ruff)
 
