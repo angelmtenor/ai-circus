@@ -1,4 +1,7 @@
-# Best Practices in Software Development – Lessons from Experience
+# 02 — Software Engineering Practices
+
+Builds on [01-fundamentals.md](01-fundamentals.md). General software-craft principles and the
+DevOps/architecture toolbox, independent of ML or GenAI.
 
 ## Core Coding Principles
 
@@ -8,9 +11,9 @@ Solid principles are the backbone of clean, maintainable, and scalable software.
 
 | #  | Principle                                           | Description                                                                                                 |
 | -- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 1  | **DRY**<br>Don’t Repeat Yourself                    | Eliminate duplication using functions, classes, or abstractions. Reduces bugs and eases upkeep.             |
+| 1  | **DRY**<br>Don't Repeat Yourself                    | Eliminate duplication using functions, classes, or abstractions. Reduces bugs and eases upkeep.             |
 | 2  | **KISS**<br>Keep It Simple, Stupid                  | Opt for the simplest solution that works. Avoid unnecessary complexity.                                     |
-| 3  | **YAGNI**<br>You Aren’t Gonna Need It               | Implement only what’s needed now. Don’t build speculative features or abstractions.                         |
+| 3  | **YAGNI**<br>You Aren't Gonna Need It               | Implement only what's needed now. Don't build speculative features or abstractions.                         |
 | 4  | **Separation of Concerns**<br>Single Responsibility | Each module, class, or function should have one clear purpose. Improves focus and testability.              |
 | 5  | **Open-Closed Principle**                           | Code should be open for extension but closed for modification. Add features without breaking existing code. |
 | 6  | **Liskov Substitution Principle**                   | Subtypes must be usable in place of their base types without altering program correctness.                  |
@@ -29,16 +32,16 @@ Adhering to these principles leads to:
 * **Fewer bugs and faster debugging** – Clear responsibilities and good tests make issues easier to find and fix
 * **Improved collaboration** – New team members (or your future self) can read and extend code with less friction
 
-Neglecting these principles can quickly turn small projects into unmanageable messes. Time saved by “quick fixes” is often lost many times over in future debugging and rewrites.
+Neglecting these principles can quickly turn small projects into unmanageable messes. Time saved by "quick fixes" is often lost many times over in future debugging and rewrites.
 
-Write code as if you’ll be the next person maintaining it—months later, under pressure. These principles are your shortcut to a smoother, less painful future.
+Write code as if you'll be the next person maintaining it—months later, under pressure. These principles are your shortcut to a smoother, less painful future.
 
 ---
 
 ## Development Standards
 
 * **Standardized Python Environment**
-  Use reproducible templates (e.g., cookiecutter) integrating pre-commit hooks, Makefile, and unified tooling.
+  Use reproducible templates (e.g., cookiecutter) integrating pre-commit hooks, Makefile, and unified tooling. See [01-fundamentals.md](01-fundamentals.md).
 
 * **Reusable Python Packages**
   Provide core packages for shared functionality, with consistent integration of development tools.
@@ -56,7 +59,7 @@ Write code as if you’ll be the next person maintaining it—months later, unde
 
 ## Tools & Best Practices
 
-* **Python Code Quality:** linters, formatters (black, flake8, pylint)
+* **Python Code Quality:** linters, formatters (black, flake8, pylint — largely superseded by ruff, see [01-fundamentals.md](01-fundamentals.md))
 * **Version Control:** Git branching strategies (GitFlow, trunk-based development)
 * **CI/CD:** Automated pipelines for testing, linting, and deployment
 * **Secrets Management:** Keep credentials outside the repository (use environment variables or vaults)
@@ -67,9 +70,46 @@ Write code as if you’ll be the next person maintaining it—months later, unde
 
 ---
 
+## Architecture & DevOps Toolbox
+
+### Diagramming
+
+* **excalidraw:** https://excalidraw.com
+* **swimlanes.io:** https://swimlanes.io
+* **draw.io:** https://app.diagrams.net
+
+### CI / CD
+
+* **Jenkins:** [Getting started with the Guided Tour](https://www.jenkins.io/doc/pipeline/tour)
+* **GitLab CI/CD:** https://docs.gitlab.com/ee/ci/
+* **GitHub Actions:** https://docs.github.com/en/actions
+
+### Container Orchestration (Kubernetes)
+
+* **Kubernetes Basics (official tutorial):** https://kubernetes.io/docs/tutorials/kubernetes-basics/
+* **minikube** (local single-node cluster for learning/dev): https://minikube.sigs.k8s.io/docs/start/
+
+### Infrastructure as Code (IaC)
+
+* **Terraform:** https://developer.hashicorp.com/terraform
+* **CloudFormation (AWS):** https://aws.amazon.com/cloudformation/getting-started
+
+### Cloud & DevOps Extras
+
+* **LocalStack:** https://github.com/localstack/localstack
+* **Coder:** https://github.com/coder/coder
+
+### API / Testing Tools
+
+* **Swagger Editor:** https://editor.swagger.io/
+* **Postman:** https://www.postman.com/
+* **JWT.io:** https://jwt.io
+* **Lens (K8s):** https://lenshq.io/
+
+---
+
 ## References & Further Reading
 
-* [15 Software Engineering Principles I Ignored for Too Long | Medium](https://medium.com/pythoneers/16-software-engineering-principles-i-ignored-for-too-long-a69d32f1a52e)
 * [Efficient Python for Data Scientists](https://github.com/youssefHosni/Efficient-Python-for-Data-Scientists)
 * [Python Code Quality: Tools & Best Practices – Real Python](https://realpython.com/python-code-quality/)
 * [Five Tips to Elevate the Readability of Your Python Code | Towards Data Science](https://towardsdatascience.com/five-tips-to-elevate-the-readability-of-your-python-code-7b049bbf72e6)
