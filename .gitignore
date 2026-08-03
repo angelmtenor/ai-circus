@@ -99,3 +99,6 @@ notebooks_dev
 temp_output/
 qdrant_data/
 coverage.json
+
+# graphify output
+graphify-out/

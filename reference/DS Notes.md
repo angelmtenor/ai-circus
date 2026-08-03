@@ -5,7 +5,7 @@
 
 ### Courses & Tutorials
 
-* [Applied Data Science with Python – University of Michigan](https://online.umich.edu/series/applied-data-science-with-python/)
+* [Applied Data Science with Python – University of Michigan](https://www.coursera.org/specializations/data-science-python)
 * [Kaggle Learn](https://www.kaggle.com/learn/overview)
 * [RAG Guide](https://www.promptingguide.ai/research/rag)
 
