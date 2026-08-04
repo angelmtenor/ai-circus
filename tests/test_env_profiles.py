@@ -29,7 +29,7 @@ def test_get_env_config_default_local(monkeypatch: pytest.MonkeyPatch) -> None:
     config = get_env_config()
 
     assert config.LLM_PROVIDER == "google"
-    assert config.GEMINI_MODEL == "gemini-flash-lite-latest"
+    assert config.GEMINI_MODEL == "gemini-3.1-flash-lite"
 
 
 @pytest.mark.parametrize("profile", ["local", "staging", "production"])
@@ -40,7 +40,7 @@ def test_get_env_config_reads_app_environment(monkeypatch: pytest.MonkeyPatch, p
     config = get_env_config()
 
     assert config.LLM_PROVIDER == "google"
-    assert config.GEMINI_MODEL == "gemini-flash-lite-latest"
+    assert config.GEMINI_MODEL == "gemini-3.1-flash-lite"
 
 
 def test_get_env_config_explicit_env_overrides_app_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -50,4 +50,4 @@ def test_get_env_config_explicit_env_overrides_app_environment(monkeypatch: pyte
     config = get_env_config(env="staging")
 
     assert config.LLM_PROVIDER == "google"
-    assert config.GEMINI_MODEL == "gemini-flash-lite-latest"
+    assert config.GEMINI_MODEL == "gemini-3.1-flash-lite"
