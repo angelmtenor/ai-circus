@@ -10,6 +10,17 @@ specifics. Get comfortable with these before moving on to
 Production is Linux, so development should be too — this avoids the classic "works on my
 machine" drift between teammates.
 
+### VS Code (install first, on the host)
+
+If you don't already have it, install [VS Code](https://code.visualstudio.com/download) on your
+**host machine** (Windows/macOS) — not inside WSL or the remote VM. Then, depending on where your
+Ubuntu environment lives, add the matching extension to connect to it:
+
+* **WSL:** [Remote - WSL extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)
+  — Command Palette → "WSL: Connect to WSL".
+* **Remote VM:** [Remote - SSH extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)
+  — Command Palette → "Remote-SSH: Connect to Host...".
+
 ### Do you need a dedicated Linux environment?
 
 * **macOS:** No — already Unix-based. Skip straight to [Python](#python) below.
@@ -42,6 +53,8 @@ VM reached via SSH — run this repo's setup scripts from `.devcontainer/`:
    optional GPU/CUDA support).
 2. `source .devcontainer/setup_user.sh` — per-user setup (git config, `uv`, Node via nvm, shell
    prompt). Must be *sourced*, not executed.
+3. Install **Docker** — [Docker Install Guide (Ubuntu)](https://docs.docker.com/engine/install/ubuntu/)
+   (not covered by the scripts above; see the [Docker](#docker) section below for the link again).
 
 Both scripts are idempotent (safe to re-run) and have been tested on AWS, Azure, GCP, on-prem
 servers, WSL, and native Linux — same result everywhere.

@@ -15,6 +15,12 @@ A building block for generative AI tool applications with state-of-the-art perfo
 Production is Linux, so development should be too — this repo targets **Ubuntu 26.04
 (minimal)**, whichever way you provision it:
 
+- If you don't already have it, install [VS Code](https://code.visualstudio.com/download) on your
+  **host machine** first. For **WSL**, add the
+  [Remote - WSL extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)
+  ("WSL: Connect to WSL"); for a **remote VM**, add the
+  [Remote - SSH extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)
+  ("Remote-SSH: Connect to Host...").
 - **macOS / native Linux:** already Unix-based — skip ahead to Quick Start.
 - **Windows:** use **WSL** ([install guide](https://learn.microsoft.com/en-us/windows/wsl/install)).
 - **Remote VM** (AWS/Azure/GCP/on-prem): provision an Ubuntu 26.04 base and connect over SSH.
@@ -27,6 +33,8 @@ for Dev Containers, which run this automatically), provision it with this repo's
 sudo ./.devcontainer/setup_sudo.sh   # one-time root setup: packages, timezone, optional GPU/CUDA
 source .devcontainer/setup_user.sh   # per-user setup: git config, uv, Node via nvm, shell prompt (must be sourced)
 ```
+
+Then install **Docker** — [Docker Install Guide (Ubuntu)](https://docs.docker.com/engine/install/ubuntu/).
 
 Both scripts are idempotent (safe to re-run). See
 [reference/01-fundamentals.md](reference/01-fundamentals.md) for the full rationale and options.
