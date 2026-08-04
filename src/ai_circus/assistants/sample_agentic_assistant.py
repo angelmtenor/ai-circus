@@ -30,7 +30,6 @@ from agents import (
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
-from ai_circus import get_env_config
 from ai_circus.assistants.chunking import split_into_chunks
 from ai_circus.assistants.demo_config import (
     CHUNK_OVERLAP,
@@ -40,6 +39,7 @@ from ai_circus.assistants.demo_config import (
     SAMPLE_FILE_PATH,
 )
 from ai_circus.core.logger import configure_logger, get_logger
+from ai_circus.data_model import get_env_config
 
 # ---------------------------------------------------------------------------
 # Configuration

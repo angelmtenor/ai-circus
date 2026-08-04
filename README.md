@@ -4,7 +4,7 @@ A building block for generative AI tool applications with state-of-the-art perfo
 
 ---
 
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 ![PyPI Package](https://img.shields.io/badge/Package%20Version-0.1.1-green?style=for-the-badge)
 ![Supported Python Versions](https://img.shields.io/badge/Supported%20Python%20Versions-3.14%2B-blue?style=for-the-badge)
 
@@ -104,7 +104,7 @@ The project uses a single source of truth for settings defined in `settings.yaml
 
 | Command | Description |
 |---|---|
-| `make ai-hello-world` | Sanity-check LLM call against your configured provider |
+| `make ai-hello-world` | Basic demo: log system info and greet using your configured LLM provider (no LLM call) |
 | `make ai-check-api-keys` | Validate that configured API keys actually work |
 | `make ai-commit` | Generate a commit message from staged changes |
 | `make ai-sample-assistant` | Run the sample single-turn assistant |

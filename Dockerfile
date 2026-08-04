@@ -24,6 +24,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src   /app/src
 COPY --from=builder /app/pyproject.toml /app/pyproject.toml
+COPY --from=builder /app/settings.yaml  /app/settings.yaml
 
 ENV PATH="/app/.venv/bin:$PATH"
 

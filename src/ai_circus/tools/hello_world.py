@@ -1,5 +1,5 @@
 """Tool "Hello World" for AI Circus.
-Author: Angel Martinez-tenor, 2026. Adapted from https://github.com/angelmtenor/ds-template
+Author: Angel Martinez-Tenor, 2026. Adapted from https://github.com/angelmtenor/ds-template
 """
 
 from __future__ import annotations

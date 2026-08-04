@@ -63,7 +63,7 @@ global_settings:
   case_sensitive: true      # Enforce case sensitivity for variable names
 
 # Per-environment non-secret overrides.
-# Secrets MUST never appear here — use .env (local) or Jenkins injection (cloud).
+# Secrets MUST never appear here — use .env (local) or CI/CD secret injection (cloud).
 # APP_ENVIRONMENT selects the active profile (default: local).
 environments:
   base:

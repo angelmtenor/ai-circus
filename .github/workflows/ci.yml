@@ -1,0 +1,37 @@
+# CI: quality gate for every push and pull request.
+# Mirrors `make check` (qa + test) so local and CI behavior stay identical.
+# Author: Angel Martinez-Tenor, 2026.
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      # Not strictly required: `uv sync` below would auto-install a matching Python
+      # if missing. Kept explicit so a Python provisioning failure shows up as its
+      # own step, separate from dependency resolution.
+      - name: Install Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: QA (pre-commit + config drift check)
+        run: make qa
+
+      - name: Run tests
+        run: make test
