@@ -74,7 +74,7 @@ def generate_data_model(
         "data_model.py",
         "-----------",
         "Generated Pydantic Settings model from settings.yaml.",
-        "DO NOT EDIT DIRECTLY. Run 'make generate' to update.",
+        "DO NOT EDIT DIRECTLY. Run 'make generate-data-model' to update.",
         "",
         "Author: Angel Martinez-Tenor, 2026.",
         '"""',
@@ -242,7 +242,7 @@ def check_env_drift() -> None:
         logger.error("Config file not found: {}", config_path)
         raise SystemExit(1)
     if not output_path.exists():
-        logger.error("Data model not found: {}. Run 'make generate'.", output_path)
+        logger.error("Data model not found: {}. Run 'make generate-data-model'.", output_path)
         raise SystemExit(1)
 
     current_hash = hashlib.sha256(config_path.read_bytes()).hexdigest()
@@ -251,14 +251,15 @@ def check_env_drift() -> None:
 
     match = re.search(r'_SOURCE_YAML_HASH = "([a-f0-9]{64})"', model_content)
     if not match:
-        logger.warning("No hash found in {}. Regenerate with 'make generate'.", output_path)
+        logger.warning("No hash found in {}. Regenerate with 'make generate-data-model'.", output_path)
         raise SystemExit(1)
 
     embedded_hash = match.group(1)
     if current_hash != embedded_hash:
         logger.error(
-            "Drift detected! settings.yaml has changed since last 'make generate'.\n"
-            "  Expected: {}\n  Current:  {}\n  Fix: run 'make generate'",
+            "Drift detected! settings.yaml has changed since last 'make generate-data-model'.\n"
+            "  Expected: {}\n  Current:  {}\n"
+            "  Fix: run 'make generate-data-model' (or 'make setup' to also re-verify the environment)",
             embedded_hash[:12],
             current_hash[:12],
         )

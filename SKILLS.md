@@ -6,7 +6,7 @@ This document outlines the specific domain knowledge, coding conventions, and ar
 **Single Source of Truth:** All application settings MUST be defined in `settings.yaml`.
 - **Synchronization Workflow:** When you need to add or change a configuration setting:
   1. Update `settings.yaml`.
-  2. Run `make generate` to sync `src/ai_circus/data_model.py` and `.env.example`.
+  2. Run `make generate-data-model` to sync `src/ai_circus/data_model.py` and `.env.example`.
 - **Prohibition:** NEVER define redundant `Settings` classes or load `.env` files manually using `dotenv` for core app logic.
   - **✅ Good:** `config = ai_circus.get_env_config()`
   - **❌ Bad:** `load_dotenv(); os.getenv("API_KEY")`

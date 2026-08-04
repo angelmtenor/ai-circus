@@ -12,7 +12,7 @@ endif
 CYAN  := $(shell tput setaf 6 2>/dev/null)
 RESET := $(shell tput sgr0 2>/dev/null)
 
-.PHONY: help setup install check update qa ssl-check test unused-packages all build clean zip generate run ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model ai-app run-container build-container build-container-clean
+.PHONY: help setup install check update qa ssl-check test unused-packages all build clean zip generate-data-model run ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model ai-app run-container build-container build-container-clean
 
 # ── Help ──────────────────────────────────────────────────────────────────────
 
@@ -26,7 +26,7 @@ setup: ## Complete setup: venv, .env, generate settings, and verify environment
 	@echo "🚀 Starting complete setup..."
 	@if [ ! -f .env ] && [ -f .env.example ]; then echo "📝 Creating .env from .env.example..."; cp .env.example .env; fi
 	@uv sync -q && uv run pre-commit install >/dev/null || { echo "❌ setup failed"; exit 1; }
-	@PYTHONWARNINGS="ignore" $(MAKE) --no-print-directory generate && uv run python check_full_env.py || { echo "⚠️  Environment check found issues."; }
+	@PYTHONWARNINGS="ignore" $(MAKE) --no-print-directory generate-data-model && uv run python check_full_env.py || { echo "⚠️  Environment check found issues."; }
 	@echo "✓ Complete setup finished!"
 
 install: ## Sync deps and install pre-commit hooks (run after cloning)
@@ -41,12 +41,12 @@ update: ## Upgrade lockfile, sync deps & update pre-commit hooks
 	@uv lock --upgrade            || { echo "❌ uv lock upgrade failed."; exit 1; }
 	@uv sync -q  || { echo "❌ uv sync failed."; exit 1; }
 	@uv run pre-commit autoupdate || { echo "❌ pre-commit autoupdate failed."; exit 1; }
-	@$(MAKE) --no-print-directory generate
+	@$(MAKE) --no-print-directory generate-data-model
 	@echo "✓ update complete"
 
 # ── Dev workflow ──────────────────────────────────────────────────────────────
 
-generate: ## Generate Pydantic data model from settings.yaml
+generate-data-model: ## Generate Pydantic data model from settings.yaml
 	@uv run ai-generate-data-model && uv run ruff format src/ai_circus/data_model.py
 
 ssl-check: ## Detect and configure SSL CA bundle (for networks with SSL inspection)

@@ -2,7 +2,7 @@
 data_model.py
 -----------
 Generated Pydantic Settings model from settings.yaml.
-DO NOT EDIT DIRECTLY. Run 'make generate' to update.
+DO NOT EDIT DIRECTLY. Run 'make generate-data-model' to update.
 
 Author: Angel Martinez-Tenor, 2026.
 """
@@ -87,7 +87,7 @@ class EnvConfig(BaseSettings):
         return v
 
 
-_SOURCE_YAML_HASH = "68f1b8123451a4ddef95e1e9e26792c6152937bc7afb10313394e9a00366d48e"
+_SOURCE_YAML_HASH = "af5a48c8ef27053914dfe559a2f6d312f7817154fc79fb3f0f9030842e086d03"
 
 
 EnvConfig.model_rebuild()

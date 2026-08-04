@@ -2,7 +2,7 @@
 # Configuration file for environment variables required by the application
 # Author: Angel Martinez-Tenor, 2026.
 # Defines variable names, descriptions, types, constraints, and validation rules.
-# Run 'make generate' after any change to sync data_model.py and .env.example.
+# Run 'make generate-data-model' after any change to sync data_model.py and .env.example.
 
 env_variables:
   - name: LLM_PROVIDER
