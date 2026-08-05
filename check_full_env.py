@@ -209,11 +209,12 @@ class Checker:
 
         example_vars = dotenv_values(path)
         required_keys = _mandatory_secret_keys(settings_path)
+        secret_keys = _secret_keys(settings_path)
 
         table = self._new_table("Key", "Value", "Status")
         for key in sorted(example_vars):
             current = os.getenv(key)
-            summary = _redact(current)
+            summary = _redact(current) if key in secret_keys else (current or "[dim]<not set>[/dim]")
             placeholder = (example_vars.get(key) or "").strip("\"'")
 
             if key in required_keys:
@@ -309,6 +310,15 @@ def _mandatory_secret_keys(settings_path: Path | str) -> set[str]:
     return {
         var["name"] for var in data.get("env_variables", []) if var.get("secret", False) and var.get("mandatory", False)
     }
+
+
+def _secret_keys(settings_path: Path | str) -> set[str]:
+    """Return names of all env vars marked secret in settings.yaml, regardless of mandatory."""
+    path = Path(settings_path)
+    if not path.exists():
+        return set()
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return {var["name"] for var in data.get("env_variables", []) if var.get("secret", False)}
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

@@ -73,7 +73,6 @@ dev = [
     "rich>=13.7.0",          # optional pretty output for check_full_env.py
     "ruff>=0.11.8",
     "twine>=6.1.0",
-    "ty>=0.0.1a6",
 ]
 
 [build-system]
@@ -163,23 +162,6 @@ search-path = ["src", ".venv/lib/python3.14/site-packages"]
 python-platform = "linux"
 python-version = "3.14"
 python-interpreter-path = ".venv/bin/python3"
-
-# ──────────────────────────────────────────────────────────────────────────────
-#  ty
-# ──────────────────────────────────────────────────────────────────────────────
-[tool.ty.rules]
-
-[tool.ty.environment]
-python = "./.venv"
-python-version = "3.14"
-python-platform = "linux"
-root = ["."]
-extra-paths = []
-
-[tool.ty.src]
-respect-ignore-files = false
-include = ["src"]
-exclude = ["**/node_modules", "**/__pycache__", "**/*venv/**/*", "./build"]
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  Pytest

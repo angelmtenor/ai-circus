@@ -38,7 +38,13 @@ This document outlines the specific domain knowledge, coding conventions, and ar
   - NEVER use `pip install` directly.
   - After changing dependencies, run `make setup` to ensure the local environment and `pyproject.toml` are in sync.
 
-## 6. Documentation Responsibility
+## 6. Ruff / Python Version Notes
+- **Unparenthesized `except`:** On Python 3.14+ (PEP 758), `ruff format` may rewrite
+  `except (A, B):` to `except A, B:`. This is valid syntax (an unparenthesized exception
+  tuple), not a Python 2 leftover — do not "fix" it by adding `as` or reintroducing parens
+  by hand; let the formatter own this.
+
+## 7. Documentation Responsibility
 - **Docstring Accuracy:** Keep docstrings updated. Every new file must include the standard header: `Author: Angel Martinez-Tenor, 2026`.
 - **Module Exports:** Ensure `src/ai_circus/__init__.py` properly exports all new public components via `__all__ = [...]`.
 - **README Updates:** If the onboarding workflow, CLI tools, or `Makefile` targets change, you must update the "Quick Start" or "CLI Tools" sections in `README.md`.
