@@ -145,7 +145,7 @@ if __name__ == "__main__":
         log.error("This is an error")
 
     except ValueError as e:
-        print(f"Logger setup failed: {e}")  # noqa: T201
+        print(f"Logger setup failed: {e}")  # ruff: ignore[print]
 
 
 # =============================================================================

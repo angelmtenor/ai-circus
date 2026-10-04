@@ -66,7 +66,7 @@ def run_git_command(command: list[str]) -> str:
         return ""
 
     try:
-        result = subprocess.run(  # noqa: S603  # Command is allow-listed
+        result = subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]  # Command is allow-listed
             command,
             capture_output=True,
             text=True,
@@ -226,8 +226,8 @@ def execute_commands(script_path: Path) -> None:
                     raise RuntimeError("git or bash not found in PATH")
 
                 # Safe execution with full paths from trusted PATH
-                subprocess.run([git_path, "reset"], check=True, cwd=Path.cwd())  # noqa: S603
-                subprocess.run([bash_path, str(script_path)], check=True, cwd=Path.cwd())  # noqa: S603
+                subprocess.run([git_path, "reset"], check=True, cwd=Path.cwd())  # ruff: ignore[subprocess-without-shell-equals-true]
+                subprocess.run([bash_path, str(script_path)], check=True, cwd=Path.cwd())  # ruff: ignore[subprocess-without-shell-equals-true]
                 logger.info("Commits executed successfully")
                 break
             except subprocess.CalledProcessError as e:
