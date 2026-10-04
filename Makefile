@@ -1,42 +1,113 @@
-# Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
+# Author: Angel Martinez-Tenor, 2026. Adapted from https://github.com/angelmtenor/ds-template
 
-# Define the expected virtual environment path
-VENV_DIR := .venv
+VENV_DIR      := .venv
+.DEFAULT_GOAL := help
 
-# Declare phony targets to avoid conflicts with files
-.PHONY: check-venv qa build update
+# Export .env variables (includes SSL_CERT_FILE if configured)
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
 
+CYAN  := $(shell tput setaf 6 2>/dev/null)
+RESET := $(shell tput sgr0 2>/dev/null)
 
-# Check if the correct virtual environment is active
-check-venv:
-	@if [ -z "$$VIRTUAL_ENV" ]; then \
-		echo "❌ No virtual environment is active. Please activate the virtual environment by running 'source ./setup.sh'."; \
-		exit 1; \
-	fi
-	@if [ "$$VIRTUAL_ENV" != "$(PWD)/$(VENV_DIR)" ]; then \
-		echo "❌ Wrong virtual environment is active ($$VIRTUAL_ENV). Expected $(PWD)/$(VENV_DIR). Please deactivate the current one with 'deactivate' and run 'source ./setup.sh'."; \
-		exit 1; \
-	fi
-	@echo "✅ Correct virtual environment is active: $$VIRTUAL_ENV"
+.PHONY: help setup install check update qa ssl-check test unused-packages all build clean zip generate-data-model run ai-hello-world ai-check-api-keys ai-commit ai-sample-assistant ai-sample-agentic ai-generate-data-model ai-app run-container build-container build-container-clean
 
-# Run quality assurance checks
-qa: check-venv
-	@echo "🔍 Running quality assurance checks..."
-	@git add . || { echo "❌ Failed to stage changes."; exit 1; }
-	@pre-commit run --all-files || { echo "❌ Quality assurance checks failed."; exit 1; }
-	@echo "✅ Quality assurance checks complete!"
+# ── Help ──────────────────────────────────────────────────────────────────────
 
-# Build the package
-build: check-venv
-	@echo "🔨 Building the project..."
-	@uv build || { echo "❌ Build failed."; exit 1; }
-	@echo "✅ Build complete!"
+help: ## Show this help message
+	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
+		awk 'BEGIN {FS=":.*?## "}; {printf "  $(CYAN)%-22s$(RESET) %s\n", $$1, $$2}'
 
+# ── Bootstrap ─────────────────────────────────────────────────────────────────
 
-# Update dependencies and pre-commit hooks
-update: check-venv
-	@echo "🔄 Updating dependencies and pre-commit hooks..."
-	@uv lock --upgrade || { echo "❌ Failed to upgrade uv lock."; exit 1; }
-	@uv sync --extra optional  || { echo "❌ Failed to sync uv."; exit 1; }
-	@pre-commit autoupdate || { echo "❌ Failed to update pre-commit hooks."; exit 1; }
-	@echo "✅ Update complete!"
+setup: ## Complete setup: venv, .env, generate settings, and verify environment
+	@echo "🚀 Starting complete setup..."
+	@if [ ! -f .env ] && [ -f .env.example ]; then echo "📝 Creating .env from .env.example..."; cp .env.example .env; fi
+	@uv sync -q && uv run pre-commit install >/dev/null || { echo "❌ setup failed"; exit 1; }
+	@PYTHONWARNINGS="ignore" $(MAKE) --no-print-directory generate-data-model && uv run python check_full_env.py || { echo "⚠️  Environment check found issues."; }
+	@echo "✓ Complete setup finished!"
+
+install: ## Sync deps and install pre-commit hooks (run after cloning)
+	@uv sync -q  || { echo "❌ uv sync failed."; exit 1; }
+	@uv run pre-commit install >/dev/null || { echo "❌ pre-commit install failed."; exit 1; }
+	@echo "✓ install complete"
+
+check: qa test ## Verify code quality and run tests
+	@echo "✓ Check complete"
+
+update: ## Upgrade lockfile, sync deps & update pre-commit hooks
+	@uv lock --upgrade            || { echo "❌ uv lock upgrade failed."; exit 1; }
+	@uv sync -q  || { echo "❌ uv sync failed."; exit 1; }
+	@uv run pre-commit autoupdate || { echo "❌ pre-commit autoupdate failed."; exit 1; }
+	@$(MAKE) --no-print-directory generate-data-model
+	@echo "✓ update complete"
+
+# ── Dev workflow ──────────────────────────────────────────────────────────────
+
+generate-data-model: ## Generate Pydantic data model from settings.yaml
+	@uv run ai-generate-data-model && uv run ruff format src/ai_circus/data_model.py
+
+ssl-check: ## Detect and configure SSL CA bundle (for networks with SSL inspection)
+	@uv run python scripts/ssl_setup.py
+
+qa: ## Run all pre-commit checks (ruff, ruff-format, etc.), config drift check and CVE audit
+	@$(MAKE) ssl-check
+	@set -a && [ -f .env ] && . ./.env; uv run pre-commit run --all-files || { echo "↻ Autofixers modified files — re-running pre-commit to verify..."; uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }; }
+	@uv run ai-config-drift-check || { echo "❌ qa failed: settings.yaml/data_model.py drift."; exit 1; }
+	@uv audit || { echo "❌ qa failed: known CVEs in dependency tree."; exit 1; }
+	@echo "✓ qa complete"
+
+test: ## Run test suite
+	@uv run pytest -v --tb=short --disable-warnings --maxfail=1 || { echo "❌ tests failed."; exit 1; }
+
+unused-packages: ## Detect unused packages (deptry)
+	@uv run deptry src
+
+# ── Build / release ───────────────────────────────────────────────────────────
+
+all: clean setup check run ## Full end-to-end verification: clean, setup, check, and run
+
+build: ## Build the package
+	@uv build || { echo "❌ build failed."; exit 1; }
+	@echo "✓ build complete"
+
+build-container: ## Build the Docker image (uses layer cache)
+	@DOCKER_BUILDKIT=1 docker build -t ai-circus .
+
+build-container-clean: ## Force full rebuild of Docker image (no cache)
+	@DOCKER_BUILDKIT=1 docker build --no-cache -t ai-circus .
+
+run-container: build-container ## Build (cached) and run the Docker container
+	@[ -f .env ] && docker run --rm -it --env-file .env ai-circus || docker run --rm -it ai-circus
+
+clean: ## Remove build artifacts, caches, and .venv (with .env backup)
+	@python3 scripts/clean.py
+
+zip: ## Zip git-tracked files into project.zip
+	@git archive --format=zip --output=project.zip HEAD || { echo "❌ zip failed."; exit 1; }
+	@echo "✓ project zipped"
+
+# ── AI tools ──────────────────────────────────────────────────────────────────
+
+run: ## Run the main application (app.py)
+	@uv run ai-app
+
+ai-hello-world: ## Run hello world tool
+	@uv run ai-hello-world
+
+ai-check-api-keys: ## Check API keys
+	@uv run ai-check-api-keys
+
+ai-commit: ## Generate commit messages
+	@uv run ai-commit
+
+ai-sample-assistant: ## Run sample assistant
+	@KMP_DUPLICATE_LIB_OK=TRUE uv run ai-sample-assistant
+
+ai-sample-agentic: ## Run sample agentic assistant
+	@KMP_DUPLICATE_LIB_OK=TRUE uv run ai-sample-agentic
+
+ai-app: ## Run the main application (alias for 'make run')
+	@$(MAKE) run

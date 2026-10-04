@@ -1,101 +1,141 @@
 # ai-circus
 
-A Building Block for Generative AI Applications with state-of-the-art performance.
+A building block for generative AI tool applications with state-of-the-art performance.
 
 ---
 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+![PyPI Package](https://img.shields.io/badge/Package%20Version-0.2.0-green?style=for-the-badge)
+![Supported Python Versions](https://img.shields.io/badge/Supported%20Python%20Versions-3.14%2B-blue?style=for-the-badge)
 
-## Package Information
+---
 
-![PyPI Package](https://img.shields.io/badge/Package%20Version-0.0.1-green?style=for-the-badge)
-![Supported Python Versions](https://img.shields.io/badge/Supported%20Python%20Versions-3.13%2B-blue?style=for-the-badge)
+## 🖥️ Prerequisites: Development Environment
+
+Production is Linux, so development should be too — this repo targets **Ubuntu 26.04
+(minimal)**, whichever way you provision it:
+
+- If you don't already have it, install [VS Code](https://code.visualstudio.com/download) on your
+  **host machine** first. For **WSL**, add the
+  [Remote - WSL extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)
+  ("WSL: Connect to WSL"); for a **remote VM**, add the
+  [Remote - SSH extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)
+  ("Remote-SSH: Connect to Host...").
+- **macOS / native Linux:** already Unix-based — skip ahead to Quick Start.
+- **Windows:** use **WSL** ([install guide](https://learn.microsoft.com/en-us/windows/wsl/install)).
+- **Remote VM** (AWS/Azure/GCP/on-prem): provision an Ubuntu 26.04 base and connect over SSH.
+- **VS Code Dev Container:** open this folder in VS Code and let it build `.devcontainer/Dockerfile`.
+
+Once you're on an Ubuntu 26.04 machine or session (WSL, native Linux, or remote VM — not needed
+for Dev Containers, which run this automatically), provision it with this repo's setup scripts:
+
+```bash
+sudo ./.devcontainer/setup_sudo.sh   # one-time root setup: packages, timezone, optional GPU/CUDA
+source .devcontainer/setup_user.sh   # per-user setup: git config, uv, Node via nvm, shell prompt (must be sourced)
+```
+
+Then install **Docker** — [Docker Install Guide (Ubuntu)](https://docs.docker.com/engine/install/ubuntu/).
+
+Both scripts are idempotent (safe to re-run). See
+[reference/01-fundamentals.md](reference/01-fundamentals.md) for the full rationale and options.
+
+---
+
+## 🚀 Quick Start
+
+Once your environment is ready, get the project up and running in seconds after cloning the
+repository:
+
+```bash
+make setup    # Initialize venv, .env, generate settings, and verify environment
+make check    # Run QA checks (linting) and tests
+make run      # Run the main hello world application
+```
+
+To verify everything end-to-end before a commit:
+```bash
+make all      # clean -> setup -> check -> run
+```
+
+---
+
+## Work in Progress
+
+This project is under active development. Features and APIs are subject to change.
+
+Implemented:
+- Centralized Pydantic configuration (`settings.yaml`)
+- Validated environment setup (`make setup`)
+- Simplified LLM/Embedding initialization (`ai_circus.get_llm`)
+
+Planned:
+- OpenSearch integration for vector storage
+- Agent framework integration (LangChain, OpenAI SDK, etc.)
+- MCP (Model Context Protocol) support and examples
 
 ---
 
 ## Tools and Frameworks
 
-
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=FFD43B)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+![uv](https://img.shields.io/badge/uv-4baaaa?style=for-the-badge&logo=github)
 ![Ruff](https://img.shields.io/badge/Ruff-000000?style=for-the-badge&logo=ruff&logoColor=white)
-![Pyright](https://img.shields.io/badge/Pyright-20232A?style=for-the-badge&logo=pyright&logoColor=61DAFB)
 ![Pytest](https://img.shields.io/badge/Pytest-0A9DFF?style=for-the-badge&logo=pytest&logoColor=white)
+![Pre-commit](https://img.shields.io/badge/Pre--commit-FDA50F?style=for-the-badge&logo=pre-commit&logoColor=white)
 
 ---
 
-## Setup
+## Configuration
 
-To properly set up your machine for development, follow these steps. These steps are designed for Debian/Ubuntu-based systems. Execute these commands in the root folder of the cloned project.
+The project uses a single source of truth for settings defined in `settings.yaml`.
 
-### One-Time Setup
-
-1.  **Sudo Setup**:
-
-    ```bash
-    sudo ./.devcontainer/setup_sudo.sh
-    ```
-
-    This script configures `sudo` and installs essential base packages.
-
-2.  **User Setup**:
-
-    ```bash
-    ./.devcontainer/setup_user.sh
-    ```
-
-    This script configures the user environment, installs `uv`, `cookiecutter`, and `pre-commit`, customizes the prompt, and sets up aliases.
-
-3.  **Update Terminal**:
-
-    ```bash
-    source ~/.bashrc
-    ```
-
-    Apply the changes made by the user setup script to your current terminal session.
-
-### Project Setup
-
-After the one-time setup, use the `setup` macro to ensure the Python environment for the project is correctly recreated and synced (it also executes the below `make qa` command).
-
-```bash
-setup
-```
-
-This command performs the following actions:
-
-*   Checks and activates the virtual environment.
-*   Syncs project dependencies using `uv`.
-*   Installs pre-commit hooks if not already installed and runs them (`make qa`)
-
-### Contributing
-
-With the environment set up, you can use tools like `make` to contribute to the project.
-
-*   **Quality Assurance**:
-
-    ```bash
-    make qa
-    ```
-
-    Runs quality assurance checks, including whitespace trimming, line ending fixes, TOML/YAML/JSON checks, merge conflict checks, Ruff, Pyright, and Bandit.
-*   **Build**:
-
-    ```bash
-    make build
-    ```
-
-    Executes the build process for the project.
-
-
-
-## TODO: Script Improvements
-
-- Use `echo "✅ Success"` to indicate success.
-- Use `echo "❌ Failure"` to indicate failure.
-- Use `echo "⚠️ Warning"` to indicate warning.
-- Use `echo "ℹ️ Info"` to indicate info.
-- Use `echo "🔍 Debug"` to indicate debug.
+1. Run `make setup` to initialize your `.env` file from `.env.example`.
+2. Edit `.env` to fill in your `OPENAI_API_KEY` and other optional keys.
+3. The application will automatically validate these at runtime using Pydantic.
 
 ---
 
-Feel free to expand this README with additional sections like **Installation**, **Usage**, **Contributing**, and **License** as needed.
+## Common Workflows
+
+| Command | Description |
+|---|---|
+| `make clean` | Remove `.venv`, caches, and artifacts (with `.env` backup) |
+| `make setup` | Full environment initialization and verification |
+| `make check` | Run `qa` (linting) and `test` (unit tests) |
+| `make run` | Execute the main application |
+| `make qa` | Run pre-commit hooks (ruff, etc.) |
+| `make test` | Run the pytest suite |
+| `make all` | Full end-to-end verification pipeline |
+| `make update` | Upgrade lockfile, sync deps, update pre-commit hooks |
+
+### AI Tools
+
+| Command | Description |
+|---|---|
+| `make ai-hello-world` | Basic demo: log system info and greet using your configured LLM provider (no LLM call) |
+| `make ai-check-api-keys` | Validate that configured API keys actually work |
+| `make ai-commit` | Generate a commit message from staged changes |
+| `make ai-sample-assistant` | Run the sample single-turn assistant |
+| `make ai-sample-agentic` | Run the sample tool-using agentic assistant |
+| `make ai-app` | Run the main application (alias for `make run`) |
+
+Each target is a thin wrapper around a `uv run` console script — they're declared under
+`[project.scripts]` in [pyproject.toml](pyproject.toml) and can be run directly without `make`,
+e.g. `uv run ai-hello-world`.
+
+---
+
+## 📚 Learn More
+
+For the reasoning behind this stack and structure — dev environment, tooling, software
+engineering practices, ML, and GenAI — see the reference notes starting at
+[reference/00-itinerary.md](reference/00-itinerary.md).
+
+---
+
+## Contributing
+
+- Please refer to [AGENTS.md](AGENTS.md) for strict architectural and testing guidelines.
+- Review the [Style Guide](styleguide.md) for commit message and coding conventions.
+- See [Contributing Guidelines](CONTRIBUTING.md) for the workflow and submission process.
+- Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).

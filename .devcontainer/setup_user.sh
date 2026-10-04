@@ -1,190 +1,107 @@
 #!/bin/bash
+#
+# Minimal User Environment Setup (unguided)
+#
+# Usage:
+#   source setup_user.sh
+#
+# Description:
+#   Configures a minimal personal development environment for a user on Ubuntu.
+#   The script is designed to be idempotent and safe to re-run.
+#
+# Main Features:
+#   • Ensures ~/.local/bin is in the PATH
+#   • Configures basic Git settings (default branch, username, email)
+#   • Sets a simple, colored bash prompt
+#   • Adds a convenient alias: `setup` → `source setup_user.sh`
+#   • Installs or updates NVM (Node Version Manager) and ensures Node.js 20
+#   • Installs/updates `uv` CLI tool
+#
+# Notes:
+#   - Must be sourced, not executed, to properly update the current shell environment.
+#   - Requires `curl` and `git` to be installed.
+#   - Adds blocks to ~/.bashrc only if missing (idempotent).
+#   - Logs actions with color-coded feedback.
 
-# Author: Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
+set -e
 
-# Description: Sets up or updates user environment with Git, tools, and shell config for dual environments.
-# Usage: source setup_user.sh [--update]
+BASHRC="$HOME/.bashrc"
+LOCAL_BIN="$HOME/.local/bin"
+NVM_DIR="$HOME/.nvm"
 
-set -euo pipefail
-trap 'echo -e "\e[31m❌ Failed at line $LINENO\e[0m" >&2; exit 1' ERR
+GREEN='\033[0;32m'; BLUE='\033[0;34m'; RED='\033[0;31m'; NC='\033[0m'
+log(){ echo -e "${GREEN}✓ $1${NC}"; }
+info(){ echo -e "${BLUE}ℹ $1${NC}"; }
+err(){ echo -e "${RED}✗ $1${NC}"; exit 1; }
 
-# Colors
-GREEN='\e[32m'
-YELLOW='\e[33m'
-RED='\e[31m'
-NC='\e[0m'
-
-# Logging
-log() {
-    case $1 in
-        success) echo -e "${GREEN}✅ $2${NC}" ;;
-        warn) echo -e "${YELLOW}⚠️ $2${NC}" ;;
-        error) echo -e "${RED}❌ $2${NC}" >&2; exit 1 ;;
-        info) echo -e "${GREEN}ℹ️ $2${NC}" ;;
-    esac
+# Append a block to .bashrc if missing
+append() {
+    local tag="$1" text="$2"
+    grep -qF "$tag" "$BASHRC" || { echo -e "$tag\n$text" >> "$BASHRC"; log "Added: $tag"; }
 }
 
-check_cmd() { command -v "$1" &>/dev/null; }
-ensure_dir() { mkdir -p "$1"; }
-
-# Check internet
-check_connectivity() {
-    log info "Checking internet..."
-    ping -c 1 -W 2 8.8.8.8 &>/dev/null || log error "No internet."
-    log success "Internet verified."
+# Ensure ~/.local/bin is in PATH
+ensure_path() {
+    append "# PATH from setup_user" 'export PATH="$HOME/.local/bin:$PATH"'
+    export PATH="$LOCAL_BIN:$PATH"
+    log "PATH ensured."
 }
 
-# Install and configure pipx
-ensure_pipx() {
-    check_cmd pipx && { log success "pipx already configured."; return; }
-    log info "Installing pipx..."
-    python3 -m pip install --user pipx &>/dev/null || log error "Failed to install pipx."
-    pipx ensurepath &>/dev/null
-    source ~/.bashrc &>/dev/null || true
-    log success "pipx configured."
-}
-
-# Manage Python tools
-manage_tools() {
-    local mode="$1" tools=(uv cookiecutter pre-commit)
-    ensure_pipx
-    for tool in "${tools[@]}"; do
-        if check_cmd "$tool" && [[ "$mode" == "update" ]]; then
-            log info "Upgrading $tool..."
-            pipx upgrade "$tool" &>/dev/null || log error "Failed to upgrade $tool."
-            log success "$tool upgraded."
-        elif check_cmd "$tool"; then
-            log success "$tool already installed."
-        else
-            log info "Installing $tool..."
-            pipx install "$tool" &>/dev/null || log error "Failed to install $tool."
-            log success "$tool installed."
-        fi
-    done
-}
-
-# Configure Git
+# Configure Git basics automatically if missing
 configure_git() {
-    check_cmd git || log error "Git not found. Install with 'sudo apt install git'."
+    command -v git &>/dev/null || err "Git missing."
+
     git config --global init.defaultBranch main
-    git config --global pull.rebase false
-    local name email
-    name=$(git config --global user.name || true)
-    email=$(git config --global user.email || true)
-    if [[ -z "$name" || -z "$email" ]]; then
-        [[ -t 0 ]] || log error "Git config missing. Set manually:\n  git config --global user.name \"Your Name\"\n  git config --global user.email \"you@example.com\""
-        while [[ -z "$name" ]]; do
-            read -p "Git username: " name
-            [[ -z "$name" ]] && log warn "Username cannot be empty."
-        done
-        while [[ -z "$email" || ! "$email" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; do
-            read -p "Git email: " email
-            [[ -z "$email" ]] && log warn "Email cannot be empty."
-            [[ ! "$email" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]] && log warn "Invalid email format."
-        done
-        git config --global user.name "$name"
-        git config --global user.email "$email"
-    fi
-    log success "Git configured: $name <$email>."
+
+    git config --global user.name  >/dev/null || git config --global user.name  "user"
+    git config --global user.email >/dev/null || git config --global user.email "user@example.com"
+
+    log "Git configured."
 }
 
-# Customize Bash prompt
-customize_bash_prompt() {
-    local bashrc=~/.bashrc marker="# Custom prompt"
-    grep -qF "$marker" "$bashrc" 2>/dev/null && { log success "Prompt already customized."; return; }
-    cat <<'EOF' >>"$bashrc"
-# Custom prompt
-RED='\[\e[31m\]'
-GREEN='\[\e[32m\]'
-YELLOW='\[\e[33m\]'
-BLUE='\[\e[34m\]'
-CYAN='\[\e[36m\]'
-RESET='\[\e[0m\]'
-
-parse_git_branch() { git branch 2>/dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'; }
-prompt_venv() { [[ -n "${VIRTUAL_ENV}" ]] && echo "(${VIRTUAL_ENV##*/}) "; }
-export PS1="\$(prompt_venv)${GREEN}\u${BLUE}@\h ${CYAN}\W${YELLOW}\$(parse_git_branch)${RESET}\$ "
-EOF
-    log success "Prompt customized."
+# Simple prompt
+set_prompt() {
+    append "# prompt from setup_user" 'export PS1="\[\e[32m\]\u@\h \[\e[34m\]\w\[\e[0m\]\$ "'
+    log "Prompt set."
 }
 
-# Configure alias
-configure_alias() {
-    local bashrc=~/.bashrc alias_cmd="alias setup='source setup.sh'"
-    grep -qF "$alias_cmd" "$bashrc" 2>/dev/null && { log success "Alias 'setup' already configured."; return; }
-    echo "$alias_cmd" >>"$bashrc"
-    log success "Alias 'setup' added."
+# Add alias
+add_alias() {
+    append "# alias from setup_user" 'alias setup="source setup_user.sh"'
+    log "Alias added."
 }
 
-# Create projects directory
-create_projects_dir() {
-    ensure_dir "$HOME/PROJECTS"
-    log success "Projects directory at $HOME/PROJECTS."
+# Install/update nvm + Node 20
+install_nvm() {
+    local latest=$(curl -s https://api.github.com/repos/nvm-sh/nvm/releases/latest | grep tag_name | cut -d'"' -f4)
+
+    # Install/update nvm
+    curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/$latest/install.sh" | bash >/dev/null 2>&1
+    . "$NVM_DIR/nvm.sh"
+
+    # Ensure Node 20
+    nvm install 20 --latest-npm >/dev/null 2>&1
+    nvm alias default 20
+    log "nvm + Node 20 ready."
 }
 
-# Verify tools
-verify_installations() {
-    log info "Verifying tools..."
-    for cmd in git uv cookiecutter pre-commit; do
-        check_cmd "$cmd" || log error "$cmd not installed."
-    done
-    log success "Tools verified."
+# Install/update uv
+install_uv() {
+    curl -LsSf https://astral.sh/uv/install.sh | sh >/dev/null 2>&1
+    log "uv installed/updated."
 }
 
-# Install nvm and Node.js 20
-setup_nvm() {
-    log info "Checking nvm and Node.js 20..."
-    check_cmd curl || log error "curl not found. Install with 'sudo apt install curl'."
-
-    # Check if nvm is installed
-    if [[ -d "$HOME/.nvm" && -s "$HOME/.nvm/nvm.sh" ]]; then
-        log success "nvm already installed."
-        export NVM_DIR="$HOME/.nvm"
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    else
-        log info "Installing nvm..."
-        curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-        [[ $? -ne 0 ]] && log error "Failed to install nvm."
-        export NVM_DIR="$HOME/.nvm"
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        log success "nvm installed."
-    fi
-
-    # Check if Node.js 20 is installed
-    if nvm ls 20 &>/dev/null; then
-        log success "Node.js 20 already installed."
-        nvm use 20 &>/dev/null || log error "Failed to activate Node.js 20."
-    else
-        log info "Installing Node.js 20..."
-        nvm install 20 &>/dev/null || log error "Failed to install Node.js 20."
-        nvm use 20 &>/dev/null || log error "Failed to activate Node.js 20."
-        log success "Node.js 20 installed."
-    fi
-
-    log success "nvm and Node.js 20 configured."
-}
-
-# Main
 main() {
-    local mode="install"
-    [[ "${1:-}" == "--update" ]] && mode="update"
-    [[ $# -gt 1 ]] && log error "Usage: $0 [--update]"
-    log info "Starting $mode..."
-    check_connectivity
-    manage_tools "$mode"
-    if [[ "$mode" == "install" ]]; then
-        configure_git
-        create_projects_dir
-        customize_bash_prompt
-        configure_alias
-        log warn "Run 'source ~/.bashrc' to apply changes."
-    fi
+    command -v curl &>/dev/null || err "curl missing."
 
-    setup_nvm
+    log "Starting user setup..."
+    ensure_path
+    configure_git
+    set_prompt
+    add_alias
+    install_nvm
+    install_uv
 
-    verify_installations
-    log success "Environment $mode completed."
-
+    log "Setup complete. Run: source ~/.bashrc"
 }
-
-main "$@"
+main

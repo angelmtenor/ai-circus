@@ -1,0 +1,84 @@
+# Security
+
+## Deployment Hardening Checklist
+
+Before deploying ai-circus services to production, verify every item below:
+
+### Environment & Secrets
+
+- [ ] `.env` file is NOT committed (verify `.gitignore` excludes `.env*`)
+- [ ] All API keys use `SecretStr` (never logged in plaintext)
+- [ ] `gitleaks` pre-commit hook is active (detects accidental secret commits)
+- [ ] No hardcoded credentials in source code
+- [ ] `.copilotignore` hides `.env*` from AI agent context
+
+### Configuration
+
+- [ ] `settings.yaml` ↔ `data_model.py` are in sync (run `uv run ai-config-drift-check`)
+- [ ] All mandatory fields have regex validation in `settings.yaml`
+- [ ] `fail_on_missing: true` in global settings (app fails fast on missing vars)
+
+### API & Network
+
+- [ ] HTTP request timeouts configured for all external API calls
+- [ ] Rate limiting / retry logic with exponential backoff enabled
+- [ ] No debug logging of user queries in production (PII risk)
+- [ ] Server host is NOT `0.0.0.0` unless behind a reverse proxy
+
+### Subprocess Safety
+
+- [ ] All subprocess calls use argument lists (never `shell=True`)
+- [ ] Git command allow-list enforced (only `git diff`, `git ls-files`, `git commit`, `git add`)
+- [ ] Executable paths validated with `shutil.which()` before execution
+
+### Dependencies
+
+- [ ] `uv.lock` reviewed for unexpected changes
+- [ ] No known CVEs in dependency tree (`uv audit` — enforced by `make qa` and CI)
+- [ ] Dependabot alerts and version-update PRs triaged (`.github/dependabot.yml`)
+- [ ] Pre-commit hooks enforced in CI
+
+### Container & Supply Chain
+
+- [ ] Image builds with a pinned uv version and runs as a non-root user (UID 1000)
+- [ ] No HIGH/CRITICAL fixable CVEs in the image (CI `container-scan` job: Trivy + SBOM)
+- [ ] GitHub Actions pinned to commit SHAs with `permissions: contents: read`
+- [ ] Full-history secret scan passes (CI `gitleaks` job)
+
+### LLM-Specific
+
+- [ ] LLM responses parsed with `json.loads()` (not regex alone)
+- [ ] Output from LLM never executed as code without sandboxing
+- [ ] Prompt injection mitigations in place for user-facing assistants
+- [ ] Token/cost limits configured to prevent runaway spending
+
+---
+
+## Known Patterns & Mitigations
+
+### Secret Logging Prevention
+
+All secrets use Pydantic `SecretStr`. When displaying:
+```python
+val = "****" + secret.get_secret_value()[-4:] if secret else "None"
+```
+
+### Subprocess Hardening
+
+Commands are allow-listed and passed as argument lists:
+```python
+ALLOWED_COMMANDS = {"git diff", "git ls-files", "git commit", "git add"}
+subprocess.run(["git", "diff", "--staged"], check=True)  # Safe
+```
+
+### Env Drift Detection
+
+Generated `data_model.py` contains a SHA-256 hash of the source YAML.
+Run `uv run ai-config-drift-check` to verify sync (`make qa` and CI run it).
+
+---
+
+## Reporting Vulnerabilities
+
+If you discover a security issue, please report it responsibly via a private issue
+or email rather than public disclosure. See [CONTRIBUTING.md](CONTRIBUTING.md).

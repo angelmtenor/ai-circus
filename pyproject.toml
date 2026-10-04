@@ -3,16 +3,13 @@
 
 [project]
 name = "ai-circus"
-version = "0.1.0" # Initial version, follow semantic versioning (e.g., MAJOR.MINOR.PATCH)
-description = "Smart AI Building Block for innovative applications." # A concise summary of your project
-readme = "README.md" # Path to your project's README file
-requires-python = ">=3.13" # Specifies the minimum Python version required. Python 3.13 is recent (as of 2025).
-license = { text = "MIT" } # Or use { file = "LICENSE.md" } if you have a separate license file
-authors = [
-    { name = "Angel Martinez-Tenor", email = "angelmtenor@gmail.com" },
-    # Add other authors here if any
-]
-keywords = [ # Keywords for PyPI to help users find your project
+version = "0.2.0" # Follow semantic versioning (MAJOR.MINOR.PATCH)
+description = "Smart AI Building Block for innovative applications."
+readme = "README.md"
+requires-python = ">=3.14"
+license = { text = "MIT" }
+authors = [{ name = "Angel Martinez-Tenor", email = "angelmtenor@gmail.com" }]
+keywords = [
     "ai",
     "machine learning",
     "deep learning",
@@ -21,240 +18,202 @@ keywords = [ # Keywords for PyPI to help users find your project
     "smart systems",
     "python",
 ]
-classifiers = [ # PyPI classifiers: https://pypi.org/classifiers/
-    "Development Status :: 3 - Alpha", # Or "4 - Beta", "5 - Production/Stable"
+classifiers = [
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
-    # Add other Python versions supported, e.g., "Programming Language :: Python :: 3.14" when available
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-# Core project dependencies
 dependencies = [
-    "httpx>=0.28.1",        # HTTP client.
-    "loguru>=0.7.3",        # Logging library.
-    "psutil>=7.0.0",        # System utilities.
-    "py-cpuinfo>=9.0.0",    # CPU info library.
-    "python-dotenv>=1.1.0", # .env file management.
+    "faiss-cpu>=1.11.0",
+    "httpx>=0.28.1",
+    "langchain>=0.3.25",
+    "langchain-community>=0.3.24",
+    "langchain-core>=1.3.3",
+    "langchain-google-genai>=2.1.4",
+    "langchain-openai>=0.3.16",
+    "langgraph>=0.4.3",
+    "loguru>=0.7.3",
+    "openai>=1.50.0",
+    "openai-agents>=0.3.3",
+    "psutil>=7.0.0",
+    "py-cpuinfo>=9.0.0",
+    "pydantic>=2.11.4",
+    "pydantic-settings>=2.9.1",
+    "PyYAML>=6.0.2",
 ]
 
-[project.urls] # Useful links for your project
-"Homepage" = "https://github.com/angelmtenor/ai-circus"          # Replace with your project's homepage URL
-"Repository" = "https://github.com/angelmtenor/ai-circus"        # Replace with your project's repository URL
-"Documentation" = "https://angelmtenor.github.io/ai-circus"      # Replace with your project's documentation URL (if any)
-"Bug Tracker" = "https://github.com/angelmtenor/ai-circus/issues" # Replace with your project's issue tracker URL
+[project.urls]
+Homepage = "https://github.com/angelmtenor/ai-circus"
+Repository = "https://github.com/angelmtenor/ai-circus"
+Documentation = "https://angelmtenor.github.io/ai-circus"
+BugTracker = "https://github.com/angelmtenor/ai-circus/issues"
 
-
-
-# Optional dependencies (can be installed with `pip install .[group_name]`)
-[project.optional-dependencies]
-optional = []
-
-# Example for a "docs" group:
-# docs = [
-#   "sphinx>=7.0.0", # Or your preferred documentation generator
-#   "sphinx-rtd-theme>=2.0.0",
-#   "myst-parser>=2.0.0", # For Markdown support in Sphinx
-# ]
-# Example for a "serving" group if your AI model needs a specific server:
-# serving = [
-#   "fastapi>=0.100.0",
-#   "uvicorn[standard]>=0.20.0",
-# ]
-
- # Dependencies for development (testing, linting, formatting, building)
 [dependency-groups]
 dev = [
-    "bandit>=1.8.3",        # Security linter.
-    "debugpy>=1.8.14",      # Python debugger.
-    "jupyter>=1.1.1",       # For notebooks.
-    "pre-commit>=4.2.0",    # Git pre-commit hooks.
-    "pyinstrument>=5.0.1",  # Profiler.
-    "pyright>=1.1.400",     # Static type checker.
-    "pytest>=8.3.5",        # Testing framework.
-    "pytest-cov>=6.1.1",    # Pytest coverage plugin.
-    "ruff>=0.11.8",         # Linter and formatter.
-    "twine>=6.1.0",         # For uploading packages to PyPI.
+    "debugpy>=1.8.14",
+    "deptry>=0.23.0",
+    "glances>=4.3.1",
+    "jupyter>=1.1.1",
+    "packaging>=24.0",      # used directly by check_full_env.py
+    "pre-commit>=4.2.0",
+    "pyinstrument>=5.0.1",
+    "pyrefly>=0.53.0",       # replaces pyright
+    "python-dotenv>=1.0.1",  # used directly by check_full_env.py
+    "pytest>=8.3.5",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=6.1.1",
+    "rich>=13.7.0",          # optional pretty output for check_full_env.py
+    "ruff>=0.16.0",     # `# ruff: ignore[<rule-name>]` suppressions need 0.16+
+    "twine>=6.1.0",
 ]
 
-[build-system] # Specifies how to build your project
-requires = ["hatchling"] # Or "setuptools>=61", "wheel", "poetry-core", "flit_core"
-build-backend = "hatchling.build" # Or "setuptools.build_meta", "poetry.core.masonry.api", "flit_core.buildapi"
-backend-path = ["."] # Optional: if backend is in a subfolder
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-# Pyright configuration (static type checker)
-# For details: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
-[tool.pyright]
-# venv and venvPath are often auto-detected, but explicit is fine.
-# venv = ".venv" # Name of the virtual environment directory
-# venvPath = "."   # Path to the project root where venv is located
-
-exclude = [ # Paths to exclude from type checking
-    "**/node_modules",
-    "**/__pycache__",
-    "**/.git",
-    "**/.hg",
-    "**/.mypy_cache",
-    "**/.pytest_cache",
-    "**/.ruff_cache",
-    "**/.tox",
-    "**/.venv", # Default virtual environment directory
-    "**/build",
-    "**/dist",
-    "**/docs/_build", # Built documentation
-    "**/notebooks_extra", # User's original exclusion
-    # Add other paths like "**/typings_removed/" if applicable
-]
-typeCheckingMode = "standard" # Options: "off", "basic", "standard", "strict". "standard" or "strict" recommended for new projects.
-# reportMissingTypeStubs = false # Set to true if you want to know about missing stubs for third-party libraries.
-# reportUnusedVariable = "warning" # Or "error", "information", "none"
-# reportImportCycles = "warning"
-
-# Ruff configuration (linter and formatter)
-# For details: https://docs.astral.sh/ruff/configuration/
+# ──────────────────────────────────────────────────────────────────────────────
+#  Ruff
+# ──────────────────────────────────────────────────────────────────────────────
 [tool.ruff]
-line-length = 120 # Maximum line length
-target-version = "py313" # Target Python version for Ruff's rules and fixes (should match requires-python)
-extend-exclude = [ # Paths to exclude from linting and formatting
-    ".venv",
-    "build",
-    "dist",
-    "notebooks_extra", # User's original exclusion
-    # Add other paths here
-]
+preview = true
+target-version = "py314"
+line-length = 120
+fix = true
+extend-exclude = [".venv", "build", "dist", "notebooks_extra"]
 
 [tool.ruff.format]
-quote-style = "double" # "double" or "single"
-indent-style = "space" # "space" or "tab"
-skip-magic-trailing-comma = false # If true, skip trailing comma for hug or magic trailing comma.
-docstring-code-format = true # Format code examples in docstrings.
-docstring-code-line-length = "dynamic" # Line length for docstring code.
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint]
-select = [ # List of rule codes/prefixes to enable
-    # "ALL" # Enable all rules (not recommended for existing projects)
-    "ANN",  # Type annotations
-    "F",    # Pyflakes: Logical errors
-    "E",    # Pycodestyle: Style errors (PEP 8)
-    "W",    # Pycodestyle: Style warnings (PEP 8)
-    "D",    # pydocstyle: Docstring conventions
-    "B",    # flake8-bugbear: Potential bugs and design problems
-    "I",    # isort: Import sorting
-    "N",    # PEP8 Naming: Naming conventions
-    "UP",   # pyupgrade: Python syntax upgrades
-    "C90",  # mccabe: Code complexity
-    "Q",    # flake8-quotes: Quote consistency
-    "SIM",  # flake8-simplify: Simplification opportunities
-    "PT",   # flake8-pytest-style: Pytest style conventions
-    "T20",  # flake8-print: Discourage `print` calls in library code (T201, T203)
-    "FURB", # refurb: Modernize Python code
-    # "RUF",  # Ruff-specific rules (often very useful, e.g., RUF001-RUF003 for ambiguous unicode)
+select = [
+    "A",   # flake8-builtins
+    "ANN", # flake8-annotations
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "D",   # pydocstyle
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "PGH", # pygrep-hooks
+    "RUF", # ruff-specific rules
+    "S",   # flake8-bandit
+    "SIM", # flake8-simplify
+    "T10", # flake8-debugger
+    "T20", # flake8-print
+    "UP",  # pyupgrade
+    "W",   # pycodestyle warnings
+    "YTT", # flake8-2020
+]
+ignore = [
+    "any-type",  # Dynamically typed expressions
+    "unused-loop-control-variable",    # Unused loop variable
+    "function-call-in-default-argument",    # Function call in argument defaults
+    "undocumented-magic-method",    # Missing docstring in magic method
+    "incorrect-blank-line-before-class",    # Blank line before class docstring
+    "missing-blank-line-after-summary",    # Blank line between summary and description
+    "multi-line-summary-first-line",    # Multi-line docstring summary
+    "missing-terminal-punctuation",    # First line punctuation
+    "boolean-type-hint-positional-argument",  # Boolean flag in function
+    "boolean-default-value-positional-argument",  # Default Boolean flag
+    "logging-f-string",    # f-string in log
+    "too-many-arguments", # Too many arguments
+    "assert",    # Use of assert detected
+    "suspicious-subprocess-import",    # Subprocess Usage
+]
 
-    # Consider adding more specific rules or prefixes based on project needs:
-    # "A", "ANN", "ARG", "BLE", "COM", "ERA", "EXE", "FA", "FURB", "G", "ICN", "ISC",
-    # "LOG", "PERF", "PGH", "PIE", "PL", "PTH", "RET", "RSE", "S", "SLF", "SLOT",
-    # "TCH", "TID", "TRY", "YTT"
-]
-ignore = [ # List of rule codes/prefixes to ignore globally
-    "B007",   # Unused loop variable (if intentionally unused, e.g., for side-effects)
-    "B008",   # Do not perform function calls in argument defaults (can be a false positive with dependency injection or specific APIs)
-    "C901",   # Function is too complex (try to refactor, but can be ignored for specific complex functions)
-    "D105",   # Missing docstring in magic method (e.g., simple `__init__`, `__repr__`)
-    "D203",   # One blank line required before class docstring (often conflicts with D211)
-    "D205",   # One blank line required between summary line and description (often conflicts with D212)
-    "D212",   # Multi-line docstring summary should start at the first line (often conflicts with D213)
-    "D415",   # First line should end with a period, question mark, or exclamation point (style preference)
-    "E501",   # Line too long (handled by formatter, but linter might still warn if formatter is off for some reason)
-    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
-    "FBT001", # Boolean flag used in a function (e.g., `def foo(flag: bool = True)`)
-    "FBT002", # Default Boolean flag used in a function
-    "PLR0913", # Too many arguments (function with many parameters can be common in some cases)
-    "G004", # f string in log
-    # "ANN101", # Missing type annotation for `self` in method
-    # "ANN102", # Missing type annotation for `cls` in classmethod
-]
-# fixable = ["ALL"] # Enable all fixable rules for auto-fixing
-# unfixable = [] # Specify rules that should not be auto-fixed
-
-[tool.ruff.lint.per-file-ignores] # Ignore rules for specific files/paths
-"**/notebooks_extra/**" = ["ALL"] # Disable all linting for exploratory notebooks
-"**.ipynb" = [ # Specific ignores for Jupyter notebooks
-    "E501", # Line too long
-    "D100", # Missing docstring in public module
-    "D103", # Missing docstring in public function
-    "D101", # Missing docstring in public class
-    "E402", # Module level import not at top of file
-    "I002", # Missing required import `__future__.annotations`
-    "T201", # print found (print is common in notebooks for quick output)
-]
-"**/__init__.py" = [
-    "D104", # Missing docstring in public package
-    "F401", # `module` imported but unused (common for re-exporting or namespace packages)
-]
-"tests/**" = [ # Specific ignores for test files
-    "S101",   # `assert` used (expected in tests)
-    "D103",   # Missing docstring in public function (test function names are often descriptive enough)
-    "D100",   # Missing docstring in public module (for test modules)
-    "D104",   # Missing docstring in public package (for test packages)
-    "SLF001", # Private member accessed (sometimes necessary for testing internal state)
-    "B018",   # Found useless expression (can happen with some pytest.raises patterns)
-]
+[tool.ruff.lint.per-file-ignores]
+"**/notebooks_extra/**" = ["ALL"]
+"**.ipynb" = ["line-too-long", "undocumented-public-module", "undocumented-public-function", "undocumented-public-class", "module-import-not-at-top-of-file", "missing-required-import", "print"]
+"**/__init__.py" = ["undocumented-public-package", "unused-import"]
+"tests/**" = ["assert", "undocumented-public-function", "undocumented-public-module", "undocumented-public-package", "private-member-access", "useless-expression"]
 
 [tool.ruff.lint.pydocstyle]
-convention = "google" # "google", "numpy", or "pep257". Ensure your docstrings follow this.
+convention = "google"
 
-# Bandit configuration (security linter)
-# For details: https://bandit.readthedocs.io/en/latest/config.html
-[tool.bandit]
-skips = [ # List of test IDs to skip
-    "B101", # assert_used: Assert statements are fine for tests and runtime checks if not disabled.
-    "B104", # hardcoded_bind_all_interfaces: Check if this is relevant for your application.
-    "B301", # pickle: Use of pickle, ensure it's from trusted sources if used.
-    "B403", # import_pickle: Use of `_pickle` module.
-    "B404", # import_subprocess: Use of `subprocess` module (ensure it's used safely).
-    "B602", # subprocess_popen_with_shell_equals_true: `subprocess.Popen` with `shell=True` is dangerous.
-    "B603", # subprocess_without_shell_equals_true: `subprocess` call with `shell=True` is dangerous.
-    "B607", # start_process_with_a_shell: Starting a process with a shell is dangerous.
-    "B608", # hardcoded_sql_expressions: Check if relevant; prefer ORMs or parameterized queries.
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Pyrefly (replaces pyright)
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.pyrefly]
+use-ignore-files = false
+project-includes = ["src"]
+project-excludes = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/*venv/**/*",
+    "**/tests",
 ]
-targets = ["src", "tests"] # Specify directories to scan. Assuming your code is in 'src/'.
-exclude_dirs = [".venv", "build", "dist", "notebooks_extra", "tests/fixtures"] # Exclude directories
-# confidence_level = "MEDIUM" # "LOW", "MEDIUM", "HIGH" - report issues with this level or higher
-# severity_level = "LOW"    # "LOW", "MEDIUM", "HIGH" - report issues with this level or higher
+search-path = ["src", ".venv/lib/python3.14/site-packages"]
+python-platform = "linux"
+python-version = "3.14"
+python-interpreter-path = ".venv/bin/python3"
 
-# Pytest configuration
-# For details: https://docs.pytest.org/en/stable/reference/reference.html#configuration-options
+# ──────────────────────────────────────────────────────────────────────────────
+#  Pytest
+# ──────────────────────────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
-minversion = "7.0" # Minimum pytest version required
-addopts = [ # Additional command-line options for pytest
-    "--cov=src", # Measure coverage for the 'src' directory (adjust if your code is elsewhere, e.g. project_name)
-    "--cov-report=html", # Generate HTML coverage report
-    "--cov-report=xml",  # Generate XML coverage report (for CI systems)
-    "--cov-fail-under=80", # Fail if test coverage is below 80%
-    "-ra", # Show extra test summary information for (a)ll except passes
-    "-q",  # Quieter output
-    # "--strict-markers", # Markers not defined in `markers` will raise an error
-    # "--durations=10", # Show the 10 slowest tests
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+minversion = "7.0"
+markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+filterwarnings = [
+    # Upstream warning triggered on import, not by our code — nothing here to fix.
+    "ignore:'_UnionGenericAlias' is deprecated.*:DeprecationWarning:google.genai",
 ]
-testpaths = ["tests"] # Directory where tests are located
-python_files = "test_*.py tests_*.py *_test.py" # Glob patterns for test files
-python_classes = "*Test Test* Describe*" # Prefixes or glob patterns for test classes
-python_functions = "test_* it_* should_* scenario_*" # Prefixes or glob patterns for test functions
+addopts = [
+    "--cov=src",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-report=json",
+    "--cov-report=term-missing",
+    "--cov-fail-under=55",  # ratchet: current total is 58% — raise as coverage grows
+    "-ra",
+    "-q",
+]
+testpaths = ["tests"]
+python_files = "test_*.py tests_*.py *_test.py"
+python_classes = "*Test Test* Describe*"
+python_functions = "test_* it_* should_* scenario_*"
 
-# markers = [ # Define custom markers to prevent typos and warnings
-#   "slow: marks tests as slow to run",
-#   "integration: marks integration tests",
-# ]
-# filterwarnings = [ # Manage warnings during test execution
-#     "error", # Treat all warnings as errors
-#     "ignore::DeprecationWarning", # Example: ignore all deprecation warnings
-# ]
+# ──────────────────────────────────────────────────────────────────────────────
+#  Coverage
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.coverage.report]
+skip_empty = true
 
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Deptry
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.deptry]
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Scripts
+# ──────────────────────────────────────────────────────────────────────────────
 [project.scripts]
-# ai-test = "ai_circus.main:main" # Test script entry point
+ai-hello-world = "ai_circus.tools.hello_world:main"
+ai-check-api-keys = "ai_circus.tools.check_api_keys:main"
+ai-commit = "ai_circus.tools.generate_commits_messages:run_main"
+ai-sample-assistant = "ai_circus.assistants.sample_assistant:main"
+ai-sample-agentic = "ai_circus.assistants.sample_agentic_assistant:main"
+ai-generate-data-model = "ai_circus.tools.generate_data_model:main"
+ai-config-drift-check = "ai_circus.tools.generate_data_model:check_env_drift"
+ai-app = "ai_circus.app:main"

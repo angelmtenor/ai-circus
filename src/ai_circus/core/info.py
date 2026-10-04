@@ -1,11 +1,13 @@
 """
 - Title:    Info
-- Author:   Angel Martinez-tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
+- Author:   Angel Martinez-Tenor, 2025. Adapted from https://github.com/angelmtenor/ds-template
 """
 
 from __future__ import annotations
 
 import platform
+import shutil
+import subprocess
 import sys
 import time
 from collections.abc import Callable
@@ -16,10 +18,10 @@ from typing import Any, TypeVar
 import cpuinfo
 import psutil
 
-from ai_circus.core import logger
+from ai_circus.core.logger import get_logger
 
 F = TypeVar("F", bound=Callable[..., Any])
-log = logger.get_logger(__name__)
+logger = get_logger(__name__)
 
 # Cached installed packages
 INSTALLED_PACKAGES = {dist.metadata["Name"]: dist.version for dist in distributions()}
@@ -30,7 +32,7 @@ DEFAULT_MODULES = ["httpx"]
 
 def info_os() -> None:
     """Log operating system version and architecture."""
-    log.info(f"{'OS':<25}{platform.platform()}")
+    logger.info(f"{'OS':<25}{platform.platform()}")
 
 
 def info_software(modules: list[str] | None = None) -> None:
@@ -40,12 +42,12 @@ def info_software(modules: list[str] | None = None) -> None:
     Args:
         modules (list[str] | None): List of module names to log. If None, uses DEFAULT_MODULES.
     """
-    log.info(f"{'ENV':<25}{sys.prefix}")
-    log.info(f"{'PYTHON':<25}{sys.version.split('(', 1)[0].strip()}")
+    logger.info(f"{'ENV':<25}{sys.prefix}")
+    logger.info(f"{'PYTHON':<25}{platform.python_version()}")
 
     for module in modules or DEFAULT_MODULES:
-        version = "--N/A--" if module == "pickle" else INSTALLED_PACKAGES.get(module, "--NO--")
-        log.info(f" - {module:<22}{version}")
+        version = INSTALLED_PACKAGES.get(module, "N/A")
+        logger.info(f" - {module:<22}{version}")
 
 
 def info_hardware() -> None:
@@ -53,20 +55,39 @@ def info_hardware() -> None:
     cpu = cpuinfo.get_cpu_info().get("brand_raw", "Unknown CPU")
     cores = psutil.cpu_count(logical=True)
     ram_gb = round(psutil.virtual_memory().total / (1024**3))
-    log.info(f"{'MACHINE':<25}{cpu} ({cores} cores, {ram_gb} GB RAM)")
+    logger.info(f"{'MACHINE':<25}{cpu} ({cores} cores, {ram_gb} GB RAM)")
 
 
 def info_gpu() -> None:
-    """Log GPU details using PyTorch, if available."""
+    """Log GPU details using nvidia-smi, if available."""
     try:
-        import torch  # type: ignore[import] # PyTorch is optional
+        # Check if nvidia-smi is available
+        nvidia_smi_path = shutil.which("nvidia-smi")
+        if nvidia_smi_path is None:
+            logger.info(f"{'GPU':<25}nvidia-smi not found")
+            return
 
-        if torch.cuda.is_available():
-            log.info(f"{'GPU':<25}{torch.cuda.get_device_name(0)}")
+        # Validate nvidia-smi path to ensure it's a known executable
+        if not Path(nvidia_smi_path).is_file():
+            logger.info(f"{'GPU':<25}Invalid nvidia-smi path")
+            return
+
+        # Run nvidia-smi command to get GPU info using full path
+        result = subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]
+            [nvidia_smi_path, "--query-gpu=name", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        gpu_name = result.stdout.strip()
+        if gpu_name:
+            logger.info(f"{'GPU':<25}{gpu_name}")
         else:
-            log.info(f"{'GPU':<25}No GPU available")
-    except ImportError:
-        log.info(f"{'GPU':<25}PyTorch not installed")
+            logger.info(f"{'GPU':<25}No GPU detected")
+    except subprocess.CalledProcessError:
+        logger.info(f"{'GPU':<25}Error querying GPU (nvidia-smi failed)")
+    except Exception as e:
+        logger.info(f"{'GPU':<25}No GPU available ({e!s})")
 
 
 def info_system(modules: list[str] | None = None) -> None:
@@ -74,20 +95,23 @@ def info_system(modules: list[str] | None = None) -> None:
     Log full system information including OS, hardware, and software.
 
     Args:
-        hardware (bool): Whether to include hardware info (CPU, RAM, GPU). Defaults to True.
         modules (list[str] | None): List of module names to log versions for. Defaults to DEFAULT_MODULES.
     """
     info_hardware()
     info_gpu()
     info_os()
     info_software(modules)
-    log.info(f"{'EXECUTION PATH':<25}{Path().absolute()}")
-    log.info(f"{'EXECUTION DATE':<25}{time.ctime()}")
+    logger.info(f"{'EXECUTION PATH':<25}{Path().absolute()}")
+    logger.info(f"{'EXECUTION DATE':<25}{time.ctime()}")
 
 
 def get_memory_usage(obj: object) -> float:
     """
     Calculate and return memory usage of an object in megabytes.
+
+    Note: This function uses `sys.getsizeof`, which only accounts for the memory
+    usage of the object itself, not including referenced objects. For a more
+    accurate measurement, consider using a library like `pympler`.
 
     Args:
         obj (object): The object to analyze.

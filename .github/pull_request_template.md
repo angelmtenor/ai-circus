@@ -17,12 +17,7 @@ Link any related issues or tickets:
 - Fixes #issue_number
 - Related to #issue_number
 
-## Developer Checklist
-- [ ] QA (pre-commit)
-- [ ] Tests pass
-- [ ] Documentation updated (if applicable)
-
-## Review Checklist
+## Checklist
 - [ ] QA (pre-commit)
 - [ ] Tests pass
 - [ ] Documentation updated (if applicable)
