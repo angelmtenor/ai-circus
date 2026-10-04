@@ -6,6 +6,10 @@
 // PRs use the `setup` prefix (.github/dependabot.yml) so they pass this check.
 export default {
   extends: ["@commitlint/config-conventional"],
+  // Dependabot's commit body (release notes, long URLs, YAML metadata) is generated
+  // and can't be wrapped, so it fails body-max-line-length. Its header type is already
+  // pinned to `setup(deps)` by .github/dependabot.yml — skip linting its commits.
+  ignores: [(message) => message.includes("Signed-off-by: dependabot[bot]")],
   rules: {
     "type-enum": [
       2,
