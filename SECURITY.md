@@ -34,8 +34,16 @@ Before deploying ai-circus services to production, verify every item below:
 ### Dependencies
 
 - [ ] `uv.lock` reviewed for unexpected changes
-- [ ] No known CVEs in dependency tree (`uv pip audit` or equivalent)
+- [ ] No known CVEs in dependency tree (`uv audit` — enforced by `make qa` and CI)
+- [ ] Dependabot alerts and version-update PRs triaged (`.github/dependabot.yml`)
 - [ ] Pre-commit hooks enforced in CI
+
+### Container & Supply Chain
+
+- [ ] Image builds with a pinned uv version and runs as a non-root user (UID 1000)
+- [ ] No HIGH/CRITICAL fixable CVEs in the image (CI `container-scan` job: Trivy + SBOM)
+- [ ] GitHub Actions pinned to commit SHAs with `permissions: contents: read`
+- [ ] Full-history secret scan passes (CI `gitleaks` job)
 
 ### LLM-Specific
 
@@ -66,7 +74,7 @@ subprocess.run(["git", "diff", "--staged"], check=True)  # Safe
 ### Env Drift Detection
 
 Generated `data_model.py` contains a SHA-256 hash of the source YAML.
-Run `uv run ai-config-drift-check` to verify sync. CI should include this check.
+Run `uv run ai-config-drift-check` to verify sync (`make qa` and CI run it).
 
 ---
 
