@@ -115,7 +115,7 @@ except ImportError:
 
         @property
         def row_count(self) -> int:
-            """Return the number of data rows."""
+            """The number of data rows."""
             return len(self.rows)
 
 # ── Logging helpers ───────────────────────────────────────────────────────────

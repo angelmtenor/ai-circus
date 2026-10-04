@@ -13,12 +13,12 @@ from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
 
 warnings.filterwarnings("ignore", category=LangChainPendingDeprecationWarning)
 
-import sys  # noqa: E402
-from collections.abc import Generator  # noqa: E402
+import sys  # ruff: ignore[module-import-not-at-top-of-file]
+from collections.abc import Generator  # ruff: ignore[module-import-not-at-top-of-file]
 
-import pytest  # noqa: E402
+import pytest  # ruff: ignore[module-import-not-at-top-of-file]
 
-import ai_circus.core.logger as _logger_module  # noqa: E402
+import ai_circus.core.logger as _logger_module  # ruff: ignore[module-import-not-at-top-of-file]
 
 
 class FakeSecret:

@@ -30,27 +30,27 @@ class Retriever(BaseRetriever):
 
     @property
     def embeddings(self) -> Embeddings:
-        """Return the embeddings instance."""
+        """The embeddings instance."""
         return self._embeddings
 
     @property
     def hybrid(self) -> bool:
-        """Return whether hybrid retrieval is enabled."""
+        """Whether hybrid retrieval is enabled."""
         return self._hybrid
 
     @property
     def default_k(self) -> int:
-        """Return the default number of documents to retrieve."""
+        """The default number of documents to retrieve."""
         return self._default_k
 
     @property
     def vectorstore(self) -> FAISS:
-        """Return the FAISS vectorstore."""
+        """The FAISS vectorstore."""
         return self._vectorstore
 
     @property
     def documents(self) -> list[Document]:
-        """Return the list of documents for hybrid retrieval."""
+        """The list of documents for hybrid retrieval."""
         return self._documents
 
     def __init__(

@@ -73,7 +73,7 @@ def info_gpu() -> None:
             return
 
         # Run nvidia-smi command to get GPU info using full path
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(  # ruff: ignore[subprocess-without-shell-equals-true]
             [nvidia_smi_path, "--query-gpu=name", "--format=csv,noheader"],
             capture_output=True,
             text=True,

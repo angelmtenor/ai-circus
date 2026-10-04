@@ -52,10 +52,11 @@ generate-data-model: ## Generate Pydantic data model from settings.yaml
 ssl-check: ## Detect and configure SSL CA bundle (for networks with SSL inspection)
 	@uv run python scripts/ssl_setup.py
 
-qa: ## Run all pre-commit checks (ruff, ruff-format, etc.) plus config drift check
+qa: ## Run all pre-commit checks (ruff, ruff-format, etc.), config drift check and CVE audit
 	@$(MAKE) ssl-check
-	@set -a && [ -f .env ] && . ./.env; uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }
+	@set -a && [ -f .env ] && . ./.env; uv run pre-commit run --all-files || { echo "↻ Autofixers modified files — re-running pre-commit to verify..."; uv run pre-commit run --all-files || { echo "❌ qa failed."; exit 1; }; }
 	@uv run ai-config-drift-check || { echo "❌ qa failed: settings.yaml/data_model.py drift."; exit 1; }
+	@uv audit || { echo "❌ qa failed: known CVEs in dependency tree."; exit 1; }
 	@echo "✓ qa complete"
 
 test: ## Run test suite

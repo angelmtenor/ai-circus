@@ -96,13 +96,13 @@ def test_generated_model_functionality(temp_config: Path, tmp_path: Path) -> Non
     assert config.TEST_VAR_SECRET is None
 
     # 2. Test valid secret with validation
-    config_valid = module.EnvConfig(TEST_VAR_SECRET="ABC", _env_file=None)  # type: ignore[attr-defined] # noqa: S106
+    config_valid = module.EnvConfig(TEST_VAR_SECRET="ABC", _env_file=None)  # type: ignore[attr-defined] # ruff: ignore[hardcoded-password-func-arg]
     assert isinstance(config_valid.TEST_VAR_SECRET, SecretStr)
     assert config_valid.TEST_VAR_SECRET.get_secret_value() == "ABC"
 
     # 3. Test invalid secret (regex mismatch)
     with pytest.raises(ValueError, match="Must be 3 uppercase letters"):
-        module.EnvConfig(TEST_VAR_SECRET="abc", _env_file=None)  # type: ignore[attr-defined] # noqa: S106
+        module.EnvConfig(TEST_VAR_SECRET="abc", _env_file=None)  # type: ignore[attr-defined] # ruff: ignore[hardcoded-password-func-arg]
 
     # 4. Test mandatory field missing (if we removed the default in YAML)
     # Our test YAML has a default, so it's not missing.
