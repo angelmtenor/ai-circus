@@ -30,7 +30,8 @@ STRICTLY MANDATORY to ensure repository integrity, security, and quality.
 ## 🌳 5. Branching Strategy — git-flow
 - **Model:** `main` (production-ready, tagged releases) and `develop` (integration branch) are
   permanent; `feature/*`, `release/*`, and `hotfix/*` are ephemeral. Use the `git flow` CLI (AVH
-  edition) — run `git flow init -d` once per clone (then `git config gitflow.prefix.versiontag v`).
+  edition) — run `git flow init -d` once per clone (empty version-tag prefix: release names already
+  carry the `v`, so `git flow release start vX.Y.Z` tags `vX.Y.Z`).
 - **Feature work:** branch from `develop` as `feature/<name>`; finish with
   `git flow feature finish <name>` (merges into `develop`). Never merge a feature branch straight
   into `main`.
